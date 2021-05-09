@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useState } from 'react'
 import { useHistory } from 'react-router-dom'
 import { MainContext } from '../../mainContext'
 import { SocketContext } from '../../socketContext'
-import { Box, Flex, Heading, IconButton, Text, Menu, Button, MenuButton, MenuList, MenuItem } from "@chakra-ui/react"
+import { Box, Flex, Heading, IconButton, Text, Menu, Button, MenuButton, MenuList, MenuItem, cookieStorageManager } from "@chakra-ui/react"
 import { FiList } from 'react-icons/fi'
 import { BiMessageDetail } from 'react-icons/bi'
 import { RiSendPlaneFill } from 'react-icons/ri'
@@ -51,6 +51,8 @@ const Queue = () => {
   const logout = () => {
     setName('');
     setRoom('');
+    document.cookie = "name=; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
+    document.cookie = "room=; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
     history.push('/');
     history.go(0);
   };

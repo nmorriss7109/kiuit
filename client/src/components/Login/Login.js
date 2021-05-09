@@ -7,44 +7,91 @@ import { RiArrowRightLine } from "react-icons/ri"
 import { useToast } from "@chakra-ui/react"
 import { UsersContext } from '../../usersContext'
 
+const getCookie = (name) => {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop().split(';').shift();
+}
+
 const Login = () => {
   const socket = useContext(SocketContext)
-  const { name, setName, room, setRoom } = useContext(MainContext)
+  const { name, room, setName, setRoom } = useContext(MainContext)
   const history = useHistory()
   const toast = useToast()
   const { setUsers } = useContext(UsersContext)
 
   //Checks to see if there's a user already present
-
   useEffect(() => {
     socket.on("users", users => {
-      setUsers(users)
+      setUsers(users);
     });
-  });
 
-  //Emits the login event and if successful redirects to queue and saves user data
-  const handleClick = () => {
-    socket.emit('login', { name, room }, error => {
-      if (error) {
-        console.log(error)
+    //If there is a cookie already storing a name/room, use that instead of asking user to login again
+    if (getCookie('name') != undefined && getCookie('room') != undefined) {
+      const name = getCookie('name');
+      const room = getCookie('room');
+
+      setName(name);
+      setRoom(room);
+
+      socket.emit('login', { name, room }, _ => {
+        // if (error) {
+        //   console.log(error);
+        //   return toast({
+        //     position: "top",
+        //     title: "Error",
+        //     description: error,
+        //     status: "error",
+        //     duration: 5000,
+        //     isClosable: true,
+        //   });
+        // }
+        
+        history.push('/queue');
         return toast({
           position: "top",
-          title: "Error",
-          description: error,
-          status: "error",
+          title: "Hey there",
+          description: `Welcome to ${room}`,
+          status: "success",
           duration: 5000,
           isClosable: true,
         });
-      };
-      history.push('/queue')
-      return toast({
-        position: "top",
-        title: "Hey there",
-        description: `Welcome to ${room}`,
-        status: "success",
-        duration: 5000,
-        isClosable: true,
       });
+    }
+  }, []);
+
+  //Emits the login event and if successful redirects to queue and saves user data
+  const handleClick = () => {
+
+    document.cookie = `name=${name}`;
+    document.cookie = `room=${room}`;
+
+    socket.emit('login', { name, room }, host => {
+      // if (error) {
+      //   console.log(error);
+      //   return toast({
+      //     position: "top",
+      //     title: "Error",
+      //     description: error,
+      //     status: "error",
+      //     duration: 5000,
+      //     isClosable: true,
+      //   });
+      // }
+      
+      if (host) {
+        history.push('/spotify_login');
+      } else {
+        history.push('/queue');
+        return toast({
+          position: "top",
+          title: "Hey there",
+          description: `Welcome to ${room}`,
+          status: "success",
+          duration: 5000,
+          isClosable: true,
+        });
+      }
     });
   };
 

@@ -2,7 +2,8 @@ const request = require('request');
 const querystring = require('querystring');
 const cors = require('cors');
 
-const app = require('express')();
+const express = require('express');
+const app = express();
 const http = require('http').Server(app);
 const io = require("socket.io")(http);
 
@@ -15,29 +16,21 @@ const redirect_uri =
   process.env.REDIRECT_URI || 
   'http://localhost:5000/callback';
 
-// const makeRoomId = (length) => {
-//   var text = "";
-//   var possible = "abcdefghijklmnopqrstuvwxyz0123456789";
-
-//   for (var i = 0; i < length; i++)
-//     text += possible.charAt(Math.floor(Math.random() * possible.length));
-
-//   console.log(text);
-//   return text;
-// }
-
 //Whenever someone connects this gets executed
 io.on('connection', (socket) => {
   console.log('A user connected');
-  const sessionID = socket.id;
 
   socket.on("login", ({name, room}, callback) => {
-    const { user, error } = addUser(socket.id, name, room);
-    if (error) return callback(error);
-    socket.join(user.room);
-    socket.in(room).emit('notification', {title: 'Welcome!', description: `${user.name} just joined the party.`});
-    io.in(room).emit('users', getUsers(room));
-    callback();
+    try {
+      const user = addUser(socket.id, name, room);
+      console.log(user);
+      socket.join(user.room);
+      socket.in(room).emit('notification', {title: 'Welcome!', description: `${user.name} just joined the party.`});
+      io.in(room).emit('users', getUsers(room));
+      callback(user.host);
+    } catch (error) {
+      console.log(error);
+    }
   });
 
   socket.on("sendMessage", message => {
@@ -56,7 +49,7 @@ io.on('connection', (socket) => {
   });
 });
 
-app.get('/login', function(req, res) {
+app.get('/spotify_login', (req, res) => {
   res.redirect('https://accounts.spotify.com/authorize?' +
     querystring.stringify({
       response_type: 'code',
@@ -66,9 +59,9 @@ app.get('/login', function(req, res) {
     }));
 });
 
-app.get('/callback', function(req, res) {
-  let code = req.query.code || null
-  let authOptions = {
+app.get('/callback', (req, res) => {
+  const code = req.query.code || null
+  const authOptions = {
     url: 'https://accounts.spotify.com/api/token',
     form: {
       code: code,
@@ -83,8 +76,8 @@ app.get('/callback', function(req, res) {
     json: true
   }
   request.post(authOptions, function(error, response, body) {
-    var access_token = body.access_token;
-    let uri = process.env.FRONTEND_URI || 'http://localhost:3000/room';
+    const access_token = body.access_token;
+    const uri = process.env.FRONTEND_URI || 'http://localhost:3000/queue';
     res.redirect(uri + '?access_token=' + access_token);
   });
 });
