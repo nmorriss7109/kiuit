@@ -2,20 +2,28 @@ import React, { useContext, useEffect, useState } from 'react'
 import { useHistory } from 'react-router-dom'
 import { MainContext } from '../../mainContext'
 import { SocketContext } from '../../socketContext'
-import { Box, Flex, Heading, IconButton, Text, Menu, Button, MenuButton, MenuList, MenuItem, cookieStorageManager } from "@chakra-ui/react"
-import { FiList } from 'react-icons/fi'
-import { BiMessageDetail } from 'react-icons/bi'
+import { Box, Flex, Heading, IconButton, Text, Menu, Button, MenuButton, MenuList, MenuItem, cookieStorageManager, HStack } from "@chakra-ui/react"
+import { FiFilePlus, FiList, FiLogOut, FiMenu, FiPlus } from 'react-icons/fi'
+import { BiMessageDetail, BiMusic } from 'react-icons/bi'
 import { RiSendPlaneFill } from 'react-icons/ri'
 import ScrollToBottom from 'react-scroll-to-bottom';
-import { useToast } from "@chakra-ui/react"
+import { useToast, Image } from "@chakra-ui/react"
 import './Queue.scss'
 import { UsersContext } from '../../usersContext'
 
 const Queue = () => {
   const { name, room, setName, setRoom } = useContext(MainContext);
   const socket = useContext(SocketContext);
-  const [message, setMessage] = useState('');
-  const [messages, setMessages] = useState([]);
+  // const [message, setMessage] = useState('');
+  const [song, setSong] = useState({
+    room: room,
+    name: 'Penny Lane',
+    artist: 'The Beatles',
+    thumbnail: 'https://is2-ssl.mzstatic.com/image/thumb/Music124/v4/74/de/04/74de0482-bbdd-d83d-7f92-3f41b0a0758b/source/600x600bb.jpg',
+    queuePosition: 0
+  });
+  // const [messages, setMessages] = useState([]);
+  const [songs, setSongs] = useState([]);
   const { users } = useContext(UsersContext);
   const history = useHistory();
   const toast = useToast();
@@ -26,8 +34,8 @@ const Queue = () => {
 
 
   useEffect(() => {
-    socket.on("message", msg => {
-      setMessages(messages => [...messages, msg]);
+    socket.on("addSong", song => {
+      setSongs(songs => [...songs, song]);
     });
 
     socket.on("notification", notif => {
@@ -40,12 +48,13 @@ const Queue = () => {
         isClosable: true,
       });
     });
+
   }, [socket, toast]);
 
 
-  const handleSendMessage = () => {
-    socket.emit('sendMessage', message, () => setMessage(''));
-    setMessage('');
+  const handleAddSong = () => {
+    socket.emit('addSong', song, () => setSong({}));
+    // setSong({});
   };
 
   const logout = () => {
@@ -58,7 +67,7 @@ const Queue = () => {
   };
 
   return (
-    <Flex className='room' flexDirection='column' width={{ base: "100%", sm: '575px' }} height={{ base: "100%", sm: "auto" }}>
+    <Flex className='room' flexDirection='column' width={{ base: "100%", sm: '400px' }} height={{ base: "100%", sm: "auto" }} >
       <Heading className='heading' as='h4' bg='white' p='1rem 1.5rem' borderRadius='10px 10px 0 0'>
         <Flex alignItems='center' justifyContent='space-between'>
           <Menu >
@@ -79,32 +88,32 @@ const Queue = () => {
             <Heading fontSize='lg'> {room.slice(0, 1).toUpperCase() + room.slice(1)}</Heading>
             <Flex alignItems='center'><Text mr='1' fontWeight='400' fontSize='md' opacity='.7' letterSpacing='0' >{name}</Text><Box h={2} w={2} borderRadius='100px' bg='green.300'></Box></Flex>
           </Flex>
-          <Button color='gray.500' fontSize='sm' onClick={logout} >Logout</Button>
+          <IconButton icon={<FiLogOut />} bg='red.300' color='white' isRound='true' onClick={logout} />
         </Flex>
       </Heading>
 
-
-      <ScrollToBottom className='messages' debug={false}>
-        {messages.length > 0 ?
-          messages.map((msg, i) =>
-          (<Box key={i} className={`message ${msg.user === name ? "my-message" : ""}`} m=".2rem 0">
-            <Text fontSize='xs' opacity='.7' ml='5px' className='user'>{msg.user}</Text>
-            <Text fontSize='sm' className='msg' p=".4rem .8rem" bg='white' borderRadius='15px' color='white'>{msg.text}</Text>
-          </Box>)
+      <ScrollToBottom className='songs' debug={false}>
+        {/* {messages.length > 0 ? */}
+        {songs.length > 0 ?
+          songs.map((song, i) =>
+          (<HStack key={i} className={'song'} spacing='auto' bg='white' padding='5px' marginBottom='10px' borderRadius='5px' width='100%'>
+              <HStack spacing='10px'>
+                <Image width='50px' height='50px' src={song.thumbnail}/>
+                <Text fontSize='large' className='name' borderRadius='2px'>{song.name} by {song.artist}</Text>
+              </HStack>
+              <IconButton icon={<FiMenu/>} bg='white' />
+            </HStack>)
           )
           :
-          <Flex alignItems='center' justifyContent='center' mt='.5rem' bg='#EAEAEA' opacity='.2' w='100%'>
+          <Flex alignItems='center' justifyContent='center' mt='.5rem' bg='#EAEAEA' opacity='.2' w='100%' paddingBottom='10px'>
             <Box mr='2'>-----</Box>
-            <BiMessageDetail fontSize='1rem' />
-            <Text ml='1' fontWeight='400'>No messages</Text>
+            <BiMusic fontSize='1rem' />
+            <Text ml='1' fontWeight='400'>No songs in queue</Text>
             <Box ml='2'>-----</Box>
           </Flex>
         }
+        <IconButton className='add-btn' icon={<FiPlus />} bg='#40EA9B' color='white' isRound='true' padding='12px' onClick={handleAddSong}/>
       </ScrollToBottom>
-      <div className='form'>
-        <input type="text" placeholder='Enter Message' value={message} onChange={e => setMessage(e.target.value)} />
-        <IconButton colorScheme='green' isRound='true' icon={<RiSendPlaneFill />} onClick={handleSendMessage} disabled={message === '' ? true : false}>Send</IconButton>
-      </div>
     </Flex>
   );
 };

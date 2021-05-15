@@ -47,9 +47,9 @@ const main = async () => {
       }
     });
 
-    socket.on("sendMessage", message => {
-      const user = getUser(socket.id);
-      io.in(user.room).emit('message', { user: user.name, text: message }); //TODO: Change this so users can send instructions to the communal queue
+    socket.on("addSong", song => {
+      console.log(song);
+      io.in(song.room).emit('addSong', song);
     });
 
     //Whenever someone disconnects this piece of code executed

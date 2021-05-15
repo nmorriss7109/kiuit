@@ -10,34 +10,29 @@
     z-index: 1000;
   }
 
-  .messages{
+  .songs{
     background:#EAEAEA;
-    .message{
-      .msg{
-        color: rgba(0,0,0,.7);
+    .song{
+      .thumbnail{
+        
       }
-    }
-    .my-message{
-      align-self: flex-end;
-      .user{
-        display: none;
-      }
-      .msg{
-        color: white;
-        background: #40ea9b;
-      }
-    }
+      .name{
 
+      }
+      .artist{
+
+      }
+    }
   }
 
-  .messages > div{
+  .songs > div{
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     flex-direction: column;
     width: auto !important;
     overflow:auto;
     min-height:400px;
-    max-height:400px;
+    max-height:600px;
     padding: 1rem;
   }
   
