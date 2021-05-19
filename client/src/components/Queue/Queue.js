@@ -25,6 +25,7 @@ const Queue = () => {
   // const [messages, setMessages] = useState([]);
   const [songs, setSongs] = useState([]);
   const { users } = useContext(UsersContext);
+  const { sessionId, setSessionId } = useContext(MainContext);
   const history = useHistory();
   const toast = useToast();
 
@@ -34,7 +35,8 @@ const Queue = () => {
 
 
   useEffect(() => {
-    socket.on("addSong", song => {
+    socket.on("add_song", song => {
+      console.log("here")
       setSongs(songs => [...songs, song]);
     });
 
@@ -53,15 +55,15 @@ const Queue = () => {
 
 
   const handleAddSong = () => {
-    socket.emit('addSong', song, () => setSong({}));
+    socket.emit('add_song', song, () => setSong({}));
     // setSong({});
   };
 
   const logout = () => {
     setName('');
     setRoom('');
-    document.cookie = "name=; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
-    document.cookie = "room=; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
+    document.cookie = "sessionId=; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
+    socket.emit('logout', sessionId);
     history.push('/');
     history.go(0);
   };

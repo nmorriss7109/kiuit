@@ -6,6 +6,7 @@ import { Flex, Heading, IconButton, Input } from "@chakra-ui/react"
 import { RiArrowRightLine } from "react-icons/ri"
 import { useToast } from "@chakra-ui/react"
 import { UsersContext } from '../../usersContext'
+import { v4 as uuidv4 } from 'uuid'
 
 const getCookie = (name) => {
   const value = `; ${document.cookie}`;
@@ -15,7 +16,7 @@ const getCookie = (name) => {
 
 const Login = () => {
   const socket = useContext(SocketContext)
-  const { name, room, setName, setRoom } = useContext(MainContext)
+  const { name, room, sessionId, setName, setRoom, setSessionId } = useContext(MainContext)
   const history = useHistory()
   const toast = useToast()
   const { setUsers } = useContext(UsersContext)
@@ -26,32 +27,36 @@ const Login = () => {
       setUsers(users);
     });
 
-    //If there is a cookie already storing a name/room, use that instead of asking user to login again
-    if (getCookie('name') != undefined && getCookie('room') != undefined) {
-      const name = getCookie('name');
-      const room = getCookie('room');
+    //If there is a cookie already storing a sessionId, use that instead of asking user to login again
+    if (getCookie('sessionId') != undefined) {
+      const sessionId = getCookie('sessionId');
+      setSessionId(sessionId);
+      // const name = getCookie('name');
+      // const room = getCookie('room');
+      
+      // setName(name);
+      // setRoom(room);
 
-      setName(name);
-      setRoom(room);
-
-      socket.emit('login', { name, room }, _ => {
-        // if (error) {
-        //   console.log(error);
-        //   return toast({
-        //     position: "top",
-        //     title: "Error",
-        //     description: error,
-        //     status: "error",
-        //     duration: 5000,
-        //     isClosable: true,
-        //   });
-        // }
+      socket.emit('resume_session', { sessionId }, callback => {
+        if (typeof callback == Error) {
+          console.log("right here");
+          return toast({
+            position: "top",
+            title: "Error",
+            description: callback.error,
+            status: "error",
+            duration: 5000,
+            isClosable: true,
+          });
+        }
         
+        setName(callback.name);
+        setRoom(callback.room_name);
         history.push('/queue');
         return toast({
           position: "top",
           title: "Hey there",
-          description: `Welcome to ${room}`,
+          description: `Welcome to ${callback.room_name}`,
           status: "success",
           duration: 5000,
           isClosable: true,
@@ -63,10 +68,12 @@ const Login = () => {
   //Emits the login event and if successful redirects to queue and saves user data
   const handleClick = () => {
 
-    document.cookie = `name=${name}`;
-    document.cookie = `room=${room}`;
+    // document.cookie = `name=${name}`;
+    // document.cookie = `room=${room}`;
+    const sessionId = uuidv4();
+    document.cookie = `sessionId=${sessionId}`;
 
-    socket.emit('login', { name, room }, host => {
+    socket.emit('start_session', { name, room, sessionId }, host => {
       // if (error) {
       //   console.log(error);
       //   return toast({
