@@ -1,6 +1,7 @@
-import cfg from "../knexfile.js"
 import knex from "knex";
 
+const cfg = await import('../knexfile.js');
+
 const environment = process.env.ENVIRONMENT || 'development';
-const config = cfg[environment];
+const config = cfg.default[environment];
 export default knex(config);

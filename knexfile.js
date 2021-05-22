@@ -11,31 +11,15 @@ export default {
       charset: 'utf8'
     },
     migrations: {
-      directory: import.meta.url + '/knex/migrations',
+      directory: './db/migrations',
     },
     seeds: {
-      directory: import.meta.url + '/knex/seeds'
-    }
-  },
-
-  staging: {
-    client: 'postgresql',
-    connection: {
-      database: 'my_db',
-      user:     'username',
-      password: 'password'
+      directory: './knex/seeds',
     },
-    pool: {
-      min: 2,
-      max: 10
-    },
-    migrations: {
-      tableName: 'knex_migrations'
-    }
   },
 
   production: {
-    client: 'postgresql',
+    client: 'pg',
     connection: {
       database: 'my_db',
       user:     'username',
@@ -46,8 +30,11 @@ export default {
       max: 10
     },
     migrations: {
-      tableName: 'knex_migrations'
-    }
+      directory: './knex/migrations',
+    },
+    seeds: {
+      directory: './knex/seeds/production',
+    },
   }
 
 };

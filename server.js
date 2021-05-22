@@ -1,4 +1,4 @@
-import knex from "./knex/knex.js";
+import knex from "./db/knex.js";
 import { __prod__ } from "./constants.js";
 import request from "request";
 import querystring from "querystring";
@@ -15,40 +15,6 @@ const main = async () => {
   const io = new Server(http);
 
   app.use(cors());
-
-  await knex.schema.createTable('sessions', (table) => {
-    table.uuid('session_id').primary();
-    table.string('name').notNullable();
-    table.string('room_name').notNullable();
-    table.enu('permissions', ['host', 'admin', 'guest']).notNullable();
-    // table.string('spotify_token').nullable();
-    // table.string('refresh_token').nullable();
-    table.bigInteger('created_at').notNullable();
-    table.bigInteger('updated_at').notNullable();
-  })
-  .then((res) => {
-    console.log(res);
-    console.log('sessions table is created!');
-  })
-  .catch(err => console.error(err));
-
-  await knex.schema.createTable('rooms', (table) => {
-    table.string('room_name').primary();
-    table.uuid('host_id').notNullable();
-    table.string('spotify_token').nullable();
-    table.string('refresh_token').nullable();
-    table.bigInteger('created_at').notNullable();
-    table.bigInteger('updated_at').notNullable();
-  })
-  .then((res) => {
-    console.log(res);
-    console.log('rooms table is created!');
-  })
-  .catch(err => console.error(err));
-
-  // await knex.schema.dropTable('sessions')
-  // .then(res => console.log(res))
-  // .catch(err => console.error(err));
 
   const redirect_uri = 
     process.env.REDIRECT_URI || 
