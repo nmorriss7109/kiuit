@@ -19,6 +19,7 @@ const Queue = props => {
     room: room,
     name: 'Penny Lane',
     artist: 'The Beatles',
+    uri: 'spotify:track:1h04XMpzGzmAudoI6VHBgA',
     thumbnail: 'https://is2-ssl.mzstatic.com/image/thumb/Music124/v4/74/de/04/74de0482-bbdd-d83d-7f92-3f41b0a0758b/source/600x600bb.jpg',
     queuePosition: 0
   });

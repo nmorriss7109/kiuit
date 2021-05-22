@@ -8,6 +8,7 @@ import { createServer } from "http";
 import { Server } from "socket.io";
 import { addUser, deleteUser, getUser, getUsers } from "./users.js";
 import { error, time } from "console";
+import SpotifyWebApi from "spotify-web-api-node";
 
 const main = async () => {
   const app = express();
@@ -15,6 +16,12 @@ const main = async () => {
   const io = new Server(http);
 
   app.use(cors());
+
+  var spotifyApi = new SpotifyWebApi({
+    clientId: process.env.SPOTIFY_CLIENT_ID,
+    clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
+    redirectUri: 'http://www.example.com/callback'
+  });
 
   //Whenever someone connects this gets executed
   io.on('connection', (socket) => {
@@ -89,9 +96,24 @@ const main = async () => {
         });
     });
 
-    socket.on("add_song", song => {
+    socket.on("add_song", async song => {
       console.log(song);
+      const room_name = song.room;
+      const tokens = await knex('rooms')
+        .select('spotify_token', 'refresh_token')
+        .where({ room_name: room_name });
+
+      spotifyApi.setAccessToken(tokens[0].spotify_token);
+
+      console.log("Right over here folks")
       io.in(song.room).emit('add_song', song);
+      
+      await spotifyApi.addToQueue(song.uri)
+        .catch(ex => {
+          console.log(ex);
+        });
+
+      
     });
 
     socket.on("logout", sessionId => {
