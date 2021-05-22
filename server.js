@@ -25,6 +25,7 @@ const main = async () => {
     console.log('A user connected');
 
     socket.on("start_session", ({name, room, sessionId}, callback) => {
+      console.log('start session');
       knex('rooms')
         .where({ room_name: room })
         .then(rows => { 
@@ -39,15 +40,12 @@ const main = async () => {
             name: name,
             room_name: room,
             permissions: permissions,
-            // spotify_token: null,
-            // refresh_token: null,
             created_at: Date.now(),
             updated_at: Date.now()
           }
           knex('sessions')
             .insert(session)
             .catch(ex => {
-              // console.log(ex);
               throw(ex);
             });
             
@@ -75,12 +73,14 @@ const main = async () => {
     });
 
     socket.on("resume_session", ({ sessionId }, callback) => {
+      console.log("resume session");
       knex('sessions')
         .where({ session_id: sessionId })
         .then(rows => {
           console.log(`rows: ${rows}`);
           if (rows[0] != null) {
             console.log("were here");
+            socket.join(rows[0].room_name);
             callback(rows[0]);
           } else {
             console.log("nah were here");
@@ -121,18 +121,16 @@ const main = async () => {
             .catch(ex => {});
         })
         .catch(ex => {});
-      
-
     });
 
     //Whenever someone disconnects this piece of code executed
     socket.on('disconnect', sessionId => {
       console.log('A user disconnected');
-      const user = deleteUser(socket.id);
-      if (user) {
-        io.in(room).emit('notification', { title: 'Goodbye :(', description: `${name} just left the party.` });
-        io.in(room).emit('users', getUsers(room));
-      }
+      // const user = deleteUser(socket.id);
+      // if (user) {
+      //   io.in(room).emit('notification', { title: 'Goodbye :(', description: `${name} just left the party.` });
+      //   io.in(room).emit('users', getUsers(room));
+      // }
     });
   });
 
