@@ -16,10 +16,6 @@ const main = async () => {
 
   app.use(cors());
 
-  const redirect_uri = 
-    process.env.REDIRECT_URI || 
-    'http://localhost:5000/callback';
-
   //Whenever someone connects this gets executed
   io.on('connection', (socket) => {
     console.log('A user connected');
@@ -124,27 +120,35 @@ const main = async () => {
     });
 
     //Whenever someone disconnects this piece of code executed
-    socket.on('disconnect', sessionId => {
+    socket.on('disconnect', _ => {
       console.log('A user disconnected');
-      // const user = deleteUser(socket.id);
-      // if (user) {
-      //   io.in(room).emit('notification', { title: 'Goodbye :(', description: `${name} just left the party.` });
-      //   io.in(room).emit('users', getUsers(room));
-      // }
     });
   });
 
   app.get('/spotify_login', (req, res) => {
+    const room_name = req.query.room_name;
+    console.log(`Spotify_login: ${room_name}`);
+
     res.redirect('https://accounts.spotify.com/authorize?' +
       querystring.stringify({
+        room_name:room_name,
         response_type: 'code',
         client_id: process.env.SPOTIFY_CLIENT_ID,
         scope: 'user-modify-playback-state',
-        redirect_uri
+        redirect_uri,
       }));
   });
 
-  app.get('/callback', (req, res) => {
+  const redirect_uri = 
+    process.env.REDIRECT_URI || 
+    'http://localhost:5000/callback';
+
+  app.get('/callback', async (req, res) => {
+    const sessionId = req.rawHeaders.find(elem => elem.startsWith('sessionId=')).split('=')[1]
+    // const rooms = await knex('rooms').where({ host_id: sessionId });
+    // const room_name = rooms[0].room_name;
+  
+    console.log(sessionId);
     const code = req.query.code || null
     const authOptions = {
       url: 'https://accounts.spotify.com/api/token',
@@ -160,12 +164,18 @@ const main = async () => {
       },
       json: true
     }
-    request.post(authOptions, function(error, response, body) {
-      const access_token = body.access_token;
+    request.post(authOptions, async (_, __, body) => {
+      const spotify_token = body.access_token;
       const refresh_token = body.refresh_token;
-      console.log(`Access Token: ${access_token}`);
-      console.log(`Refresh Token: ${refresh_token}`);
+      await knex('rooms')
+              .where({ host_id:sessionId })
+              .update({ 
+                spotify_token: spotify_token,
+                refresh_token: refresh_token,
+                updated_at: Date.now()
+              });
       const uri = process.env.FRONTEND_URI || 'http://localhost:3000/queue';
+      
       res.redirect(uri);
     });
   });

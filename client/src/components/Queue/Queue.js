@@ -11,7 +11,7 @@ import { useToast, Image } from "@chakra-ui/react"
 import './Queue.scss'
 import { UsersContext } from '../../usersContext'
 
-const Queue = () => {
+const Queue = props => {
   const { name, room, setName, setRoom } = useContext(MainContext);
   const socket = useContext(SocketContext);
   // const [message, setMessage] = useState('');

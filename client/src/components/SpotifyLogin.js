@@ -3,7 +3,7 @@ import React from 'react'
 import { BiArrowBack } from 'react-icons/bi'
 import { Redirect, useHistory } from 'react-router-dom'
 
-export default function SpotifyLogin() {
+const SpotifyLogin = () => {
   const history = useHistory();
   const redirect = () => {
     document.cookie = "sessionId=; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
@@ -16,3 +16,5 @@ export default function SpotifyLogin() {
     </div>
   );
 };
+
+export default SpotifyLogin;

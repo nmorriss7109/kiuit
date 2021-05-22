@@ -38,6 +38,8 @@ const Login = () => {
       // setRoom(room);
 
       socket.emit('resume_session', { sessionId }, callback => {
+
+        // TODO: Fix this stuff
         if (typeof callback == Error) {
           console.log("right here");
           return toast({
@@ -67,9 +69,6 @@ const Login = () => {
 
   //Emits the login event and if successful redirects to queue and saves user data
   const handleClick = () => {
-
-    // document.cookie = `name=${name}`;
-    // document.cookie = `room=${room}`;
     const sessionId = uuidv4();
     document.cookie = `sessionId=${sessionId}`;
 
