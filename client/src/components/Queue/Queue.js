@@ -2,10 +2,10 @@ import React, { useContext, useEffect, useState } from 'react'
 import { useHistory } from 'react-router-dom'
 import { MainContext } from '../../mainContext'
 import { SocketContext } from '../../socketContext'
-import { Box, Flex, Heading, IconButton, Text, Menu, Button, MenuButton, MenuList, MenuItem, cookieStorageManager, HStack } from "@chakra-ui/react"
+import { Box, Flex, Heading, IconButton, Text, Menu, Button, MenuButton, MenuList, MenuItem, cookieStorageManager, HStack, Input } from "@chakra-ui/react"
 import { FiFilePlus, FiList, FiLogOut, FiMenu, FiPlus } from 'react-icons/fi'
 import { BiMessageDetail, BiMusic } from 'react-icons/bi'
-import { RiSendPlaneFill } from 'react-icons/ri'
+import { RiBoxingLine, RiSendPlaneFill } from 'react-icons/ri'
 import ScrollToBottom from 'react-scroll-to-bottom';
 import { useToast, Image } from "@chakra-ui/react"
 import './Queue.scss'
@@ -14,17 +14,19 @@ import { UsersContext } from '../../usersContext'
 const Queue = props => {
   const { name, room, setName, setRoom } = useContext(MainContext);
   const socket = useContext(SocketContext);
-  // const [message, setMessage] = useState('');
-  const [song, setSong] = useState({
-    room: room,
-    name: 'Penny Lane',
-    artist: 'The Beatles',
-    uri: 'spotify:track:1h04XMpzGzmAudoI6VHBgA',
-    thumbnail: 'https://is2-ssl.mzstatic.com/image/thumb/Music124/v4/74/de/04/74de0482-bbdd-d83d-7f92-3f41b0a0758b/source/600x600bb.jpg',
-    queuePosition: 0
-  });
+  // const [song, setSong] = useState({
+  //   room: room,
+  //   name: 'Penny Lane',
+  //   artist: 'The Beatles',
+  //   uri: 'spotify:track:1h04XMpzGzmAudoI6VHBgA',
+  //   thumbnail: 'https://is2-ssl.mzstatic.com/image/thumb/Music124/v4/74/de/04/74de0482-bbdd-d83d-7f92-3f41b0a0758b/source/600x600bb.jpg',
+  //   queuePosition: 0
+  // });
   // const [messages, setMessages] = useState([]);
   const [songs, setSongs] = useState([]);
+  const [searchBoxVisible, setSearchBoxVisible] = useState(false);
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
   const { users } = useContext(UsersContext);
   const { sessionId, setSessionId } = useContext(MainContext);
   const history = useHistory();
@@ -37,8 +39,9 @@ const Queue = props => {
 
   useEffect(() => {
     socket.on("add_song", song => {
-      console.log("here")
+      console.log(song)
       setSongs(songs => [...songs, song]);
+      console.log(songs);
     });
 
     socket.on("notification", notif => {
@@ -52,12 +55,26 @@ const Queue = props => {
       });
     });
 
+    socket.on("search_results", tracks => {
+      const results = tracks.slice(0, 4);
+      setSearchResults(results);
+    });
+
   }, [socket, toast]);
 
+  const triggerSearchBox = () => {
+    console.log("yo")
+    setSearchBoxVisible(true);
+  }
 
-  const handleAddSong = () => {
-    socket.emit('add_song', song, () => setSong({}));
-    // setSong({});
+  const handleSearch = () => {
+    socket.emit("search_song", {search_term: searchTerm, room_name: room}, results => setSearchResults(results));
+  }
+
+  const handleAddSong = (i) => {
+    socket.emit('add_song', {song: searchResults[i], room_name: room});
+
+    setSearchBoxVisible(false);
   };
 
   const logout = () => {
@@ -101,8 +118,8 @@ const Queue = props => {
           songs.map((song, i) =>
           (<HStack key={i} className={'song'} spacing='auto' bg='white' padding='5px' marginBottom='10px' borderRadius='5px' width='100%'>
               <HStack spacing='10px'>
-                <Image width='50px' height='50px' src={song.thumbnail}/>
-                <Text fontSize='large' className='name' borderRadius='2px'>{song.name} by {song.artist}</Text>
+                <Image width='50px' height='50px' src={song.album.images[2].url}/>
+                <Text fontSize='large' className='name' borderRadius='2px'>{song.name} by {song.artists[0].name}</Text>
               </HStack>
               <IconButton icon={<FiMenu/>} bg='white' />
             </HStack>)
@@ -115,7 +132,26 @@ const Queue = props => {
             <Box ml='2'>-----</Box>
           </Flex>
         }
-        <IconButton className='add-btn' icon={<FiPlus />} bg='#40EA9B' color='white' isRound='true' padding='12px' onClick={handleAddSong}/>
+        {searchBoxVisible ? 
+        <Box className={'search-box'} spacing='auto' bg='white' padding='5px' marginBottom='10px' borderRadius='5px' width='100%'>
+          <Input variant='filled' mr={{ base: "0", md: "4" }} mb={{ base: "4", md: "0" }} type="text" value={searchTerm} onChange={e => {
+              setSearchTerm(e.target.value);
+              handleSearch();
+            }} />
+          {searchResults.map((song, i) => (
+            // console.log(song)
+            <Box key={i} className={'song'} onClick={() => handleAddSong(i)} spacing='auto' bg='white' padding='5px' marginBottom='10px' borderRadius='5px' width='100%'>
+              <HStack spacing='10px'>
+                <Image width='50px' height='50px' src={song.album.images[2].url}/>
+                <Text fontSize='large' className='name' borderRadius='2px'>{song.name} by {song.artists[0].name}</Text>
+              </HStack>
+            </Box>
+          ))}
+          {/* <Button onClick={handleAddSong(searchTerm)}/> */}
+        </Box>
+        :
+        <IconButton className='add-btn' icon={<FiPlus />} bg='#40EA9B' color='white' isRound='true' padding='12px' onClick={() => triggerSearchBox()}/>
+        }
       </ScrollToBottom>
     </Flex>
   );

@@ -96,9 +96,9 @@ const main = async () => {
         });
     });
 
-    socket.on("add_song", async song => {
-      console.log(song);
-      const room_name = song.room;
+    socket.on("add_song", async data => {
+      console.log(data.song);
+      const room_name = data.room_name;
       const tokens = await knex('rooms')
         .select('spotify_token', 'refresh_token')
         .where({ room_name: room_name });
@@ -106,14 +106,24 @@ const main = async () => {
       spotifyApi.setAccessToken(tokens[0].spotify_token);
 
       console.log("Right over here folks")
-      io.in(song.room).emit('add_song', song);
+      io.in(data.room_name).emit('add_song', data.song);
       
-      await spotifyApi.addToQueue(song.uri)
+      await spotifyApi.addToQueue(data.song.uri)
         .catch(ex => {
           console.log(ex);
         });
+    });
 
-      
+    socket.on("search_song", async data => {
+      const tokens = await knex('rooms')
+        .select('spotify_token', 'refresh_token')
+        .where({ room_name: data.room_name });
+
+      spotifyApi.setAccessToken(tokens[0].spotify_token);
+
+      const res = await spotifyApi.searchTracks(data.search_term);
+      socket.emit("search_results", res.body.tracks.items);
+      console.log(tracks);
     });
 
     socket.on("logout", sessionId => {
