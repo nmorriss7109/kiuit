@@ -71,6 +71,12 @@ const main = async () => {
           socket.in(room).emit('notification', {title: 'Welcome!', description: `${name} just joined the party.`});
           io.in(room).emit('users', getUsers(room));
           callback(host);
+          knex('tracks')
+            .where({ room_name: rows[0].room_name })
+            .then(rows => {
+              console.log(rows);
+              io.in(room).emit("load_songs", rows);
+            });
         })
         .catch(ex => {});
     });
@@ -85,6 +91,12 @@ const main = async () => {
             console.log("were here");
             socket.join(rows[0].room_name);
             callback(rows[0]);
+            knex('tracks')
+              .where({ room_name: rows[0].room_name })
+              .then(rows => {
+                console.log(rows);
+                io.in(rows[0].room_name).emit("load_songs", rows);
+              });
           } else {
             console.log("nah were here");
             callback(new Error("Could not find the stored session."));
@@ -105,8 +117,25 @@ const main = async () => {
 
       spotifyApi.setAccessToken(tokens[0].spotify_token);
 
+      const track = {
+        name: data.song.name,
+        artist: data.song.artists[0].name,
+        thumbnail_url: data.song.album.images[2].url,
+        room_name: data.room_name,
+        added_by: data.session_id,
+        likes: 0,
+        created_at: Date.now(),
+        updated_at: Date.now(),
+      }
+
       console.log("Right over here folks")
-      io.in(data.room_name).emit('add_song', data.song);
+      io.in(data.room_name).emit('add_song', track);
+
+      await knex('tracks')
+        .insert(track)
+        .catch(ex => {
+          throw(ex);
+        });
       
       await spotifyApi.addToQueue(data.song.uri)
         .catch(ex => {

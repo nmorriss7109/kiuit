@@ -14,15 +14,6 @@ import { UsersContext } from '../../usersContext'
 const Queue = props => {
   const { name, room, setName, setRoom } = useContext(MainContext);
   const socket = useContext(SocketContext);
-  // const [song, setSong] = useState({
-  //   room: room,
-  //   name: 'Penny Lane',
-  //   artist: 'The Beatles',
-  //   uri: 'spotify:track:1h04XMpzGzmAudoI6VHBgA',
-  //   thumbnail: 'https://is2-ssl.mzstatic.com/image/thumb/Music124/v4/74/de/04/74de0482-bbdd-d83d-7f92-3f41b0a0758b/source/600x600bb.jpg',
-  //   queuePosition: 0
-  // });
-  // const [messages, setMessages] = useState([]);
   const [songs, setSongs] = useState([]);
   const [searchBoxVisible, setSearchBoxVisible] = useState(false);
   const [searchResults, setSearchResults] = useState([]);
@@ -38,6 +29,11 @@ const Queue = props => {
 
 
   useEffect(() => {
+    socket.on("load_songs", songs => {
+      console.log(songs);
+      setSongs(songs);
+    });
+
     socket.on("add_song", song => {
       console.log(song)
       setSongs(songs => [...songs, song]);
@@ -72,7 +68,7 @@ const Queue = props => {
   }
 
   const handleAddSong = (i) => {
-    socket.emit('add_song', {song: searchResults[i], room_name: room});
+    socket.emit('add_song', {song: searchResults[i], room_name: room, session_id: sessionId});
 
     setSearchBoxVisible(false);
   };
@@ -118,8 +114,8 @@ const Queue = props => {
           songs.map((song, i) =>
           (<HStack key={i} className={'song'} spacing='auto' bg='white' padding='5px' marginBottom='10px' borderRadius='5px' width='100%'>
               <HStack spacing='10px'>
-                <Image width='50px' height='50px' src={song.album.images[2].url}/>
-                <Text fontSize='large' className='name' borderRadius='2px'>{song.name} by {song.artists[0].name}</Text>
+                <Image width='50px' height='50px' src={song.thumbnail_url}/>
+                <Text fontSize='large' className='name' borderRadius='2px'>{song.name} by {song.artist}</Text>
               </HStack>
               <IconButton icon={<FiMenu/>} bg='white' />
             </HStack>)
@@ -147,7 +143,6 @@ const Queue = props => {
               </HStack>
             </Box>
           ))}
-          {/* <Button onClick={handleAddSong(searchTerm)}/> */}
         </Box>
         :
         <IconButton className='add-btn' icon={<FiPlus />} bg='#40EA9B' color='white' isRound='true' padding='12px' onClick={() => triggerSearchBox()}/>
