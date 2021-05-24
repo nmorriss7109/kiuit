@@ -2,8 +2,8 @@ import React, { useContext, useEffect, useState } from 'react'
 import { useHistory } from 'react-router-dom'
 import { MainContext } from '../../mainContext'
 import { SocketContext } from '../../socketContext'
-import { Box, Flex, Heading, IconButton, Text, Menu, Button, MenuButton, MenuList, MenuItem, cookieStorageManager, HStack, Input } from "@chakra-ui/react"
-import { FiFilePlus, FiList, FiLogOut, FiMenu, FiPlus } from 'react-icons/fi'
+import { Box, Flex, Heading, IconButton, Text, Menu, Button, MenuButton, MenuList, MenuItem, cookieStorageManager, HStack, Input, VStack } from "@chakra-ui/react"
+import { FiFilePlus, FiList, FiLogOut, FiMenu, FiPlus, FiX } from 'react-icons/fi'
 import { BiMessageDetail, BiMusic } from 'react-icons/bi'
 import { RiBoxingLine, RiSendPlaneFill } from 'react-icons/ri'
 import ScrollToBottom from 'react-scroll-to-bottom';
@@ -128,22 +128,25 @@ const Queue = props => {
             <Box ml='2'>-----</Box>
           </Flex>
         }
-        {searchBoxVisible ? 
-        <Box className={'search-box'} spacing='auto' bg='white' padding='5px' marginBottom='10px' borderRadius='5px' width='100%'>
-          <Input variant='filled' mr={{ base: "0", md: "4" }} mb={{ base: "4", md: "0" }} type="text" value={searchTerm} onChange={e => {
-              setSearchTerm(e.target.value);
-              handleSearch();
-            }} />
-          {searchResults.map((song, i) => (
-            // console.log(song)
-            <Box key={i} className={'song'} onClick={() => handleAddSong(i)} spacing='auto' bg='white' padding='5px' marginBottom='10px' borderRadius='5px' width='100%'>
-              <HStack spacing='10px'>
-                <Image width='50px' height='50px' src={song.album.images[2].url}/>
-                <Text fontSize='large' className='name' borderRadius='2px'>{song.name} by {song.artists[0].name}</Text>
-              </HStack>
-            </Box>
-          ))}
-        </Box>
+        {searchBoxVisible ?
+        <VStack alignItems='center' width='100%'>
+          <Box className={'search-box'} spacing='auto' bg='white' padding='5px' borderRadius='5px' width='100%'>
+            <Input variant='filled' mr={{ base: "0", md: "4" }} mb={{ base: "4", md: "0" }} type="text" value={searchTerm} onChange={e => {
+                setSearchTerm(e.target.value);
+                handleSearch();
+              }} />
+            {searchResults.map((song, i) => (
+              // console.log(song)
+              <Box key={i} className={'song'} onClick={() => handleAddSong(i)} spacing='auto' bg='white' padding='5px' marginBottom='5px' borderRadius='5px' width='100%'>
+                <HStack spacing='10px'>
+                  <Image width='50px' height='50px' src={song.album.images[2].url}/>
+                  <Text fontSize='large' className='name' borderRadius='2px'>{song.name} by {song.artists[0].name}</Text>
+                </HStack>
+              </Box>
+            ))}
+          </Box>
+          <IconButton className='cancel-btn' icon={<FiX />} bg='red.300' color='white' isRound='true' padding='12px' onClick={() => setSearchBoxVisible(false)} />
+        </VStack> 
         :
         <IconButton className='add-btn' icon={<FiPlus />} bg='#40EA9B' color='white' isRound='true' padding='12px' onClick={() => triggerSearchBox()}/>
         }
