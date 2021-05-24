@@ -9,6 +9,7 @@ import { Server } from "socket.io";
 import { addUser, deleteUser, getUser, getUsers } from "./users.js";
 import { error, time } from "console";
 import SpotifyWebApi from "spotify-web-api-node";
+import path from 'path';
 
 const main = async () => {
   const app = express();
