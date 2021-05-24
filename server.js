@@ -9,7 +9,7 @@ import { Server } from "socket.io";
 import { addUser, deleteUser, getUser, getUsers } from "./users.js";
 import { error, time } from "console";
 import SpotifyWebApi from "spotify-web-api-node";
-import path from 'path';
+// import path from 'path';
 
 const main = async () => {
   const app = express();
@@ -18,12 +18,12 @@ const main = async () => {
 
   app.use(cors());
 
-  if (process.env.NODE_ENV === "production") {
-    app.use(express.static("build"));
-    app.get("*", (req, res) => {
-      res.sendFile(path.resolve(__dirname,  "client", "public", "index.html"));
-    });
-  }
+  // if (process.env.NODE_ENV === "production") {
+  //   app.use(express.static("build"));
+  //   app.get("*", (req, res) => {
+  //     res.sendFile(path.resolve(__dirname,  "client", "public", "index.html"));
+  //   });
+  // }
 
   var spotifyApi = new SpotifyWebApi({
     clientId: process.env.SPOTIFY_CLIENT_ID,
