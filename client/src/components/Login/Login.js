@@ -71,6 +71,7 @@ const Login = () => {
   const handleClick = () => {
     const sessionId = uuidv4();
     document.cookie = `sessionId=${sessionId}`;
+    console.log("Button clicked!");
 
     socket.emit('start_session', { name, room, sessionId }, host => {
       // if (error) {
