@@ -9,7 +9,7 @@ import { Server } from "socket.io";
 import { addUser, deleteUser, getUser, getUsers } from "./users.js";
 import { error, time } from "console";
 import SpotifyWebApi from "spotify-web-api-node";
-import { dirname, path } from 'path';
+import { dirname } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -23,10 +23,11 @@ const main = async () => {
 
   if (process.env.NODE_ENV === "production") {
     app.use(express.static("client/build"));
-    
+
     // Handle React routing, return all requests to React app
     app.get('*', (req, res) => {
-      res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
+      // res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
+      res.sendFile('./client/build/index.html');
     });
   }
 
