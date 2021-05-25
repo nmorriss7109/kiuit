@@ -43,6 +43,7 @@ const main = async () => {
 
     socket.on("start_session", ({name, room, sessionId}, callback) => {
       console.log('start session');
+      console.log({room, name, sessionId});
       knex('rooms')
         .where({ room_name: room })
         .then(rows => { 
@@ -92,7 +93,7 @@ const main = async () => {
               io.in(room).emit("load_songs", rows);
             });
         })
-        .catch(ex => {});
+        .catch(ex => {console.log(ex)});
     });
 
     socket.on("resume_session", ({ sessionId }, callback) => {
