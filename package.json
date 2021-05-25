@@ -1,7 +1,10 @@
 {
     "name": "kiuit",
     "version": "1.0.0",
+    "description": "A collaborative and customizable Spotify queue.",
     "type": "module",
+    "author": "Nathan Morrissey",
+    "license": "MIT",
     "scripts": {
         "client": "cd client && yarn start",
         "server": "nodemon server.js",
@@ -23,5 +26,8 @@
     "devDependencies": {
         "concurrently": "^4.0.1",
         "nodemon": "^2.0.7"
+    },
+    "engines": {
+      "node": "14.x"
     }
 }
