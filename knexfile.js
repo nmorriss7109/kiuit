@@ -14,7 +14,7 @@ export default {
       directory: './db/migrations',
     },
     seeds: {
-      directory: './knex/seeds',
+      directory: './db/seeds',
     },
   },
 
@@ -27,11 +27,12 @@ export default {
       max: 10
     },
     migrations: {
-      directory: './knex/migrations',
+      directory: './db/migrations',
     },
     seeds: {
-      directory: './knex/seeds/production',
+      directory: './db/seeds/production',
     },
+    ssl: true,
   }
 
 };
