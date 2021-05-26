@@ -26,7 +26,7 @@ export default {
       // database: 'dbb4nhfchi0ml9',
       // user: 'hyvztknsknozgm',
       // password: '8282c0759bc29a3756e673ccde55ae4795a2dba93d3b17564904893a8c3ffb7e',
-      // ssl: { rejectUnauthorized: false }
+      ssl: { rejectUnauthorized: false }
     },
     debug: true,
     migrations: {
@@ -35,7 +35,6 @@ export default {
     seeds: {
       directory: './db/seeds/production',
     },
-    ssl: true,
   }
 
 };
