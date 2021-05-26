@@ -6,8 +6,6 @@ import cors from "cors";
 import express from "express";
 import { createServer } from "http";
 import { Server } from "socket.io";
-import { addUser, deleteUser, getUser, getUsers } from "./users.js";
-import { error, time } from "console";
 import SpotifyWebApi from "spotify-web-api-node";
 import { dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -67,7 +65,6 @@ const main = async () => {
               throw(ex);
             });
             
-          // const user = addUser(socket.id, name, room);
           socket.join(room);
           
           if (host) {
@@ -131,7 +128,7 @@ const main = async () => {
         .where({ room_name: room_name });
 
       spotifyApi.setAccessToken(tokens[0].spotify_token);
-
+      console.log(data.room_name);
       const track = {
         name: data.song.name,
         artist: data.song.artists[0].name,

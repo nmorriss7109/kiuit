@@ -10,6 +10,7 @@ import ScrollToBottom from 'react-scroll-to-bottom';
 import { useToast, Image } from "@chakra-ui/react"
 import './Queue.scss'
 import { UsersContext } from '../../usersContext'
+import getCookie from '../GetCookie';
 
 const Queue = props => {
   const { name, room, setName, setRoom } = useContext(MainContext);
@@ -55,6 +56,8 @@ const Queue = props => {
       const results = tracks.slice(0, 4);
       setSearchResults(results);
     });
+
+    setSessionId(getCookie('sessionId'));
 
   }, [socket, toast]);
 
@@ -155,4 +158,4 @@ const Queue = props => {
   );
 };
 
-export default Queue
+export default Queue;

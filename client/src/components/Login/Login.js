@@ -7,12 +7,13 @@ import { RiArrowRightLine } from "react-icons/ri"
 import { useToast } from "@chakra-ui/react"
 import { UsersContext } from '../../usersContext'
 import { v4 as uuidv4 } from 'uuid'
+import getCookie from '../GetCookie';
 
-const getCookie = (name) => {
-  const value = `; ${document.cookie}`;
-  const parts = value.split(`; ${name}=`);
-  if (parts.length === 2) return parts.pop().split(';').shift();
-}
+// const getCookie = (name) => {
+//   const value = `; ${document.cookie}`;
+//   const parts = value.split(`; ${name}=`);
+//   if (parts.length === 2) return parts.pop().split(';').shift();
+// }
 
 const Login = () => {
   const socket = useContext(SocketContext)
