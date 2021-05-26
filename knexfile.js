@@ -1,29 +1,27 @@
 // Update with your config settings.
 
-export default 
-// {
-//   development: {
-//     client: 'pg',
-//     connection: {
-//       host : '127.0.0.1',
-//       user : 'postgres',
-//       password : 'postgres',
-//       database : 'postgres',
-//       charset: 'utf8'
-//     },
-//     migrations: {
-//       directory: './db/migrations',
-//     },
-//     seeds: {
-//       directory: './db/seeds',
-//     },
-//   },
-
-//   production: 
-  {
+export default {
+  development: {
     client: 'pg',
     connection: {
-      connectionString: process.env.DATABASE_URL,
+      host : '127.0.0.1',
+      user : 'postgres',
+      password : 'postgres',
+      database : 'postgres',
+      charset: 'utf8'
+    },
+    migrations: {
+      directory: './db/migrations',
+    },
+    seeds: {
+      directory: './db/seeds',
+    },
+  },
+
+  production: {
+    client: 'postgresql',
+    connection: {
+      connectionString: process.env.DATABASE_URL + '?ssl=true',
       // host: 'ec2-18-211-97-89.compute-1.amazonaws.com',
       // database: 'dbb4nhfchi0ml9',
       // user: 'hyvztknsknozgm',
@@ -39,4 +37,4 @@ export default
     },
   }
 
-// };
+};
