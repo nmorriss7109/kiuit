@@ -1,0 +1,15 @@
+---
+application:
+  name: "kiuit"
+  project: "Kiuit"
+  organization: "QoveryCommunity"
+databases:
+- type: "POSTGRESQL"
+  name: "kiuit"
+  version: "12"
+routers:
+- name: "main-kiuit"
+  routes:
+  - application_name: "kiuit"
+    paths:
+    - "/*"
