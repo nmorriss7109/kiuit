@@ -21,7 +21,7 @@ export default {
   production: {
     client: 'postgresql',
     connection: {
-      connectionString: process.env.DATABASE_URL + '?ssl=true',
+      connectionString: process.env.DATABASE_URL,
       // host: 'ec2-18-211-97-89.compute-1.amazonaws.com',
       // database: 'dbb4nhfchi0ml9',
       // user: 'hyvztknsknozgm',
