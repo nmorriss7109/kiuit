@@ -1,4 +1,3 @@
-import knex from "./db/knex.js";
 import { __prod__ } from "./constants.js";
 import request from "request";
 import querystring from "querystring";
@@ -9,31 +8,45 @@ import { Server } from "socket.io";
 import SpotifyWebApi from "spotify-web-api-node";
 import { dirname } from 'path';
 import { fileURLToPath } from 'url';
+import db from "./db.js"
+// import { MongoClient, ObjectId } from "mongodb";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-const main = async () => {
-  const app = express();
-  const http = createServer(app);
-  const io = new Server(http);
+const app = express();
+const http = createServer(app);
+const io = new Server(http);
 
-  app.use(cors());
+app.use(cors());
 
-  if (process.env.NODE_ENV === "production") {
-    app.use(express.static("client/build"));
+if (process.env.NODE_ENV === "production") {
+  app.use(express.static("client/build"));
 
-    // Handle React routing, return all requests to React app
-    app.get('*', (req, res) => {
-      // res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
-      res.sendFile('./client/build/index.html');
-    });
-  }
-
-  var spotifyApi = new SpotifyWebApi({
-    clientId: process.env.SPOTIFY_CLIENT_ID,
-    clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
-    redirectUri: 'http://www.example.com/callback'
+  // Handle React routing, return all requests to React app
+  app.get('*', (req, res) => {
+    // res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
+    res.sendFile('./client/build/index.html');
   });
+}
+
+var spotifyApi = new SpotifyWebApi({
+  clientId: process.env.SPOTIFY_CLIENT_ID,
+  clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
+  redirectUri: 'http://www.example.com/callback'
+});
+
+ // << db setup >>
+ const dbName = process.env.NODE_ENV === 'production' ? 'prod' : 'dev';
+ const collectionName = 'sessions';
+ 
+// << db init >>
+db.initialize(dbName, collectionName, function(dbCollection) { // successCallback
+    // get all items
+  dbCollection.find().toArray(function(err, result) {
+    if (err) throw err;
+    console.log(result);
+  });
+  
 
   //Whenever someone connects this gets executed
   io.on('connection', (socket) => {
@@ -256,6 +269,5 @@ const main = async () => {
   let port = process.env.PORT || 5000;
   console.log(`Listening on port ${port}.`);
   http.listen(port);
-}
 
-main();
+});
