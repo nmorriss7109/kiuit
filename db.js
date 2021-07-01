@@ -1,7 +1,5 @@
 import mongoose from "mongoose";
 
-mongoose.connect(process.env.DB_URL);
-
 var Schema = mongoose.Schema;
 
 // Create Session schema
@@ -116,6 +114,23 @@ const addNewSession = (name, roomName, sessionId, done) => {
 
 const fetchExistingSession = (sessionId, done) => {
   Session.find({sessionId: sessionId}, (err,data) => {
+    if(err) {
+      return done(err);
+    }
+    return done(null, data);
+  })
+}
+
+const addNewRoom = (roomName, sessionId, done) => {
+  const session = new Session({ sessionId: sessionId, name: name, roomName: roomName });
+  session.save((err, data) => {
+    if (err) return done(err);
+    return done(null, data);
+  });
+};
+
+const fetchExistingRoom = (roomName, done) => {
+  Room.find({room_name: roomName}, (err,data) => {
     if(err) {
       return done(err);
     }
@@ -402,6 +417,8 @@ var queryChain = function(done) {
 //----- **DO NOT EDIT BELOW THIS LINE** ----------------------------------
 
 export default { Session, addNewSession, fetchExistingSession };
+export default { Room, addNewRoom, fetchExistingRoom };
+export default { Track };
 // exports.createAndSavePerson = createAndSavePerson;
 // exports.findPeopleByName = findPeopleByName;
 // exports.findOneByFood = findOneByFood;
