@@ -6,6 +6,7 @@ var Schema = mongoose.Schema;
 var sessionSchema = new Schema({
   sessionId: {
     type: String,
+    unique: true,
     required: true
   },
   name: {
@@ -16,18 +17,10 @@ var sessionSchema = new Schema({
     type: String,
     required: true
   },
-  permissions: {
-    type: String
-  },
-  createdAt: { 
-    type: Date, 
-    default: Date.now 
-  },
-  updatedAt: { 
-    type: Date, 
-    default: Date.now 
+  isHost: {
+    type: Boolean
   }
-});
+}, { timestamps: true });
 
 var Session = mongoose.model("Session", sessionSchema);
 
@@ -36,6 +29,7 @@ var Session = mongoose.model("Session", sessionSchema);
 var roomSchema = new Schema({
   roomName: {
     type: String,
+    unique: true,
     required: true
   },
   hostId: {
@@ -48,63 +42,55 @@ var roomSchema = new Schema({
   refreshToken: {
     type: String
   },
-  createdAt: { 
-    type: Date, 
-    default: Date.now 
-  },
-  updatedAt: { 
-    type: Date, 
-    default: Date.now 
-  }
-});
+  queue: [{
+    trackId: { type: String },
+    songName: { type: String },
+    artist: { type: String },
+    thumbnailUrl: { type: String },
+    likes: { type: Number },
+    addedBy: { type: String },
+    addedAt: { type: Number }
+  }]
+}, { timestamps: true });
 
 var Room = mongoose.model("Room", roomSchema);
 
 
 // Create Track schema
-var trackSchema = new Schema({
-  trackId: {
-    type: Integer,
-    required: true
-  },
-  name: {
-    type: String,
-    required: true
-  },
-  artist: {
-    type: String,
-    required: true
-  },
-  thumbnailUrl: {
-    type: String,
-  },
-  likes: {
-    type: Integer,
-    default: 0
-  },
-  roomName: {
-    type: String,
-    required: true
-  },
-  addedBy: {
-    type: String,
-    required: true
-  },
-  createdAt: { 
-    type: Date, 
-    default: Date.now 
-  },
-  updatedAt: { 
-    type: Date, 
-    default: Date.now 
-  }
-});
+// var trackSchema = new Schema({
+//   trackId: {
+//     type: Integer,
+//     required: true
+//   },
+//   name: {
+//     type: String,
+//     required: true
+//   },
+//   artist: {
+//     type: String,
+//     required: true
+//   },
+//   thumbnailUrl: {
+//     type: String,
+//   },
+//   likes: {
+//     type: Integer,
+//     default: 0
+//   },
+//   roomName: {
+//     type: String,
+//     required: true
+//   },
+//   addedBy: {
+//     type: String,
+//     required: true
+//   }
+// }, { timestamps: true });
 
-var Track = mongoose.model("Track", trackSchema);
+// var Track = mongoose.model("Track", trackSchema);
 
 
-
-const addNewSession = (name, roomName, sessionId, done) => {
+const addSession = (name, roomName, sessionId, done) => {
   const session = new Session({ sessionId: sessionId, name: name, roomName: roomName });
   session.save((err, data) => {
     if (err) return done(err);
@@ -112,31 +98,101 @@ const addNewSession = (name, roomName, sessionId, done) => {
   });
 };
 
-const fetchExistingSession = (sessionId, done) => {
-  Session.find({sessionId: sessionId}, (err,data) => {
-    if(err) {
-      return done(err);
-    }
+const findSession = (sessionId, done) => {
+  Session.findOne({ sessionId: sessionId }, (err, data) => {
+    if(err) return done(err);
     return done(null, data);
   })
-}
-
-const addNewRoom = (roomName, sessionId, done) => {
-  const session = new Session({ sessionId: sessionId, name: name, roomName: roomName });
-  session.save((err, data) => {
-    if (err) return done(err);
-    return done(null, data);
-  });
 };
 
-const fetchExistingRoom = (roomName, done) => {
-  Room.find({room_name: roomName}, (err,data) => {
-    if(err) {
-      return done(err);
-    }
-    return done(null, data);
+const deleteSession = (sessionId, done) => {
+  Session.findOneAndDelete({ sessionId: sessionId }, (err, data) => {
+    if (err) return done(err);
+    return done(data);
   })
 }
+
+const addRoom = (roomName, hostId, done) => {
+  const room = new Room({ roomName: roomName, hostId: hostId });
+  room.save((err, data) => {
+    if (err) return done(err);
+    return done(null, data);
+  })
+};
+
+const findRoom = (roomName, done) => {
+  Room.findOne({ roomName: roomName }, (err, data) => {
+    if(err) return done(err);
+    return done(null, data);
+  })
+};
+
+const deleteRoom = (roomName, done) => {
+  Room.findOneAndRemove({ roomName: roomName }, (err, __) => {
+    if (err) return done(err);
+  })
+}
+
+const findRoomUpdateTokens = (roomName, spotifyToken, refreshToken, done) => {
+  Room.findOneAndUpdate(
+    { roomName: roomName },
+    { spotifyToken: spotifyToken },
+    { refreshToken: refreshToken },
+    (err, data) => {
+      if (err) done(err);
+      return done(null, data)
+    })
+};
+
+const findRoomAddTrack = (roomName, { trackId, songUri, songName, artist, thumbnailUrl, likes, addedBy }, done) => {
+  const track = {
+      trackId: trackId, 
+      songUri: songUri,
+      songName: songName, 
+      artist: artist, 
+      thumbnailUrl: thumbnailUrl, 
+      likes: likes, 
+      addedBy: addedBy,
+      addedAt: Date.now()
+    };
+  Room.findOneAndUpdate(
+    { roomName: roomName },
+    { $push: {queue: track} },
+    (err, data) => {
+      if (err) return done(err);
+      return done(null, data);
+    })
+};
+
+/** 9) New Update : Use `findOneAndUpdate()` */
+
+// Recent versions of `mongoose` have methods to simplify documents updating.
+// Some more advanced features (i.e. pre/post hooks, validation) beahve
+// differently with this approach, so the 'Classic' method is still useful in
+// many situations. `findByIdAndUpdate()` can be used when searching by Id.
+//
+// Find a person by `name` and set her age to `20`. Use the function parameter
+// `personName` as search key.
+//
+// Hint: We want you to return the **updated** document. In order to do that
+// you need to pass the options document `{ new: true }` as the 3rd argument
+// to `findOneAndUpdate()`. By default the method
+// passes the unmodified object to its callback.
+
+var findAndUpdate = function(personName, done) {
+  var ageToSet = 20;
+  
+  Person.findOneAndUpdate(
+    {name: personName},
+    {age:ageToSet},
+    {new: true},
+    (err, data) => {
+      if (err) {
+        done(err);
+      }
+      done(null, data);
+    })
+};
 
 // First of all we need a **Schema**. Each schema maps to a MongoDB collection
 // and defines the shape of the documents within that collection. Schemas are
@@ -169,7 +225,7 @@ const fetchExistingRoom = (roomName, done) => {
 // **Warning** - When interacting with remote services, **errors may occur** !
 
 // - Example -
-// var someFunc = function(done) {
+// var someFunc = function(done)
 //   ... do something (risky) ...
 //   if(error) return done(error);
 //   done(null, result);
@@ -416,9 +472,13 @@ var queryChain = function(done) {
 
 //----- **DO NOT EDIT BELOW THIS LINE** ----------------------------------
 
-export default { Session, addNewSession, fetchExistingSession };
-export default { Room, addNewRoom, fetchExistingRoom };
-export default { Track };
+export default {
+  Session,
+  addSession, findSession, deleteSession,
+  Room,
+  addRoom, findRoom, deleteRoom, findRoomUpdateTokens, findRoomAddTrack
+}
+// export default { Track };
 // exports.createAndSavePerson = createAndSavePerson;
 // exports.findPeopleByName = findPeopleByName;
 // exports.findOneByFood = findOneByFood;

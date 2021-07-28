@@ -8,7 +8,9 @@ import { Server } from "socket.io";
 import SpotifyWebApi from "spotify-web-api-node";
 import { dirname } from 'path';
 import { fileURLToPath } from 'url';
-import my_db from "./db.js"
+import mongoose from "mongoose";
+import kiuit from "./db.js"
+import { randomUUID } from "crypto";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -16,14 +18,16 @@ const app = express();
 const http = createServer(app);
 const io = new Server(http);
 
-const Session = my_db.Session;
-const Room = my_db.Room;
-const Track = my_db.Track;
-
-const addNewSession = my_db.addNewSession;
-const findExistingSession = my_db.findExistingSession;
-const addNewRoom = my_db.addNewRoom;
-const findExistingRoom = my_db.findExistingRoom;
+const Session = kiuit.Session;
+const Room = kiuit.Room;
+const addSession = kiuit.addSession;
+const findSession = kiuit.findSession;
+const deleteSession = kiuit.deleteSession;
+const addRoom = kiuit.addRoom;
+const findRoom = kiuit.findRoom;
+const deleteRoom = kiuit.deleteRoom;
+const findRoomUpdateTokens = kiuit.findRoomUpdateTokens;
+const findRoomAddTrack = kiuit.findRoomAddTrack;
 
 app.use(cors());
 
@@ -43,189 +47,191 @@ var spotifyApi = new SpotifyWebApi({
   redirectUri: 'http://www.example.com/callback'
 });
 
- // << db setup >>
- const dbName = process.env.NODE_ENV === 'production' ? 'prod' : 'dev';
- const conn = mongoose.connect(process.env.DB_URL);
- const db = conn.db(dbName);
-//  const collectionName = 'sessions';
- 
-// // << db init >>
-// db.initialize(dbName, collectionName, (dbCollection) => { // successCallback
-//     // get all items
-//   dbCollection.find().toArray(function(err, result) {
-//     if (err) throw err;
-//     console.log(result);
-//   });
-  
+mongoose.connect(process.env.DB_URL, { useNewUrlParser: true, useUnifiedTopology: true, useFindAndModify: false });
+
 
 //Whenever someone connects this gets executed
 io.on('connection', (socket) => {
   console.log('A user connected');
 
-  socket.on("start_session", ({name, room, sessionId}, callback) => {
+  socket.on("start_session", ({name, roomName, sessionId, isHost}, callback) => {
     console.log('start session');
-    console.log({room, name, sessionId});
-    
-    fetchExistingRoom(room, (err, data) => {
-      if (err) {
-        console.log(err);
-      } else {
-        console.log(data);
-      }
-    });
+    console.log({roomName, name, sessionId});
 
-    // knex('rooms')
-    //   .where({ room_name: room })
-    //   .then(rows => { 
-    //     console.log(rows.length);
-    //     let host = true;
-    //     if (rows.length != 0) host = false;
-    //     console.log(`host value ${host}`);
-    //     let permissions = host ? 'host' : 'guest';
+    addSession(name, roomName, sessionId, (err, __) => {
+      if (err) console.log(err);
+    })
 
-    //     const session = {
-    //       session_id: sessionId,
-    //       name: name,
-    //       room_name: room,
-    //       permissions: permissions,
-    //       created_at: Date.now(),
-    //       updated_at: Date.now()
-    //     }
-    //     knex('sessions')
-    //       .insert(session)
-    //       .catch(ex => {
-    //         throw(ex);
-    //       });
-          
-    //     socket.join(room);
-        
-    //     if (host) {
-    //       knex('rooms')
-    //         .insert({
-    //           room_name: room,
-    //           host_id: sessionId,
-    //           spotify_token: null,
-    //           refresh_token: null,
-    //           created_at: Date.now(),
-    //           updated_at: Date.now()
-    //         })
-    //         .then(res => console.log(res));
-    //     }
-        
-    //     socket.in(room).emit('notification', {title: 'Welcome!', description: `${name} just joined the party.`});
-    //     io.in(room).emit('users', getUsers(room));
-    //     callback(host);
-    //     knex('tracks')
-    //       .where({ room_name: rows[0].room_name })
-    //       .then(rows => {
-    //         console.log(rows);
-    //         io.in(room).emit("load_songs", rows);
-    //       });
-    //   })
-    //   .catch(ex => {console.log(ex)});
+    if (isHost) {
+      addRoom(roomName, sessionId, (err, __) => {
+        if (err) {
+          console.log(err);
+          callback(err);
+        } else {
+          console.log(`Added room ${roomName}`);
+          socket.join(roomName);
+          socket.in(roomName).emit('notification', {title: 'Welcome!', description: `${name} just joined the party.`});
+          // socket.in(roomName).emit('users', getUsers(roomName));
+          callback();
+        }
+      })
+    } else {
+      findRoom(roomName, (err, data) => {
+        console.log(data)
+        if (err) {
+          console.log(err);
+          callback(err);
+        }
+        if (!data) {
+          callback("Error");
+        } else {
+          console.log("join");
+          socket.join(roomName);
+          socket.in(roomName).emit('notification', {title: 'Welcome!', description: `${name} just joined the party.`});
+          io.in(roomName).emit('load_tracks', data.queue);
+          callback();
+          // io.in(roomName).emit('users', getUsers(roomName));
+        }
+      });
+    }
   });
 
   socket.on("resume_session", ({ sessionId }, callback) => {
     console.log("resume session");
-    Session.findById(sessionId, (err, data) => {
+    findSession(sessionId, (err, data) => {
       //do something with data
-      console.log(data);
+      if (err || !data) {
+        console.log(err);
+        callback(err);
+      } else {
+        console.log(data);
+        const { name, roomName } = data;
+        socket.join(roomName);
+        findRoom(roomName, (err, data) => {
+          if (err) {
+            console.log(err);
+          } else {
+            console.log(data.queue);
+            io.in(roomName).emit("load_tracks", data.queue);
+            callback(undefined, { name, roomName });
+          }
+        })        
+      }
     });
-    // knex('sessions')
-    //   .where({ session_id: sessionId })
-    //   .then(rows => {
-    //     console.log(`rows: ${rows}`);
-    //     if (rows[0] != null) {
-    //       console.log("were here");
-    //       socket.join(rows[0].room_name);
-    //       callback(rows[0]);
-    //       knex('tracks')
-    //         .where({ room_name: rows[0].room_name })
-    //         .then(rows => {
-    //           console.log(rows);
-    //           io.in(rows[0].room_name).emit("load_songs", rows);
-    //         });
-    //     } else {
-    //       console.log("nah were here");
-    //       callback(new Error("Could not find the stored session."));
-    //     }
-    //   })
-    //   .catch(ex => {
-    //     console.log(ex);
-    //     callback(ex);
-    //   });
   });
 
-  socket.on("add_song", async data => {
-    console.log(data.song);
-    const room_name = data.room_name;
-    const tokens = await knex('rooms')
-      .select('spotify_token', 'refresh_token')
-      .where({ room_name: room_name });
+  socket.on("add_track", ({ song, roomName, sessionId }, callback) => {
+    findRoom(roomName, (err, data) => {
+      if (err) {
+        console.log(err);
+        callback(err);
+      } else {
+        const spotifyToken = data.spotifyToken;
+        spotifyApi.setAccessToken(spotifyToken);
+        const track = {
+          trackId: randomUUID(),
+          songUri: song.uri,
+          songName: song.name,
+          artist: song.artists[0].name,
+          thumbnailUrl: song.album.images[2].url,
+          likes: 0,
+          addedBy: sessionId,
+        }
+        console.log(track);
+        io.in(roomName).emit('add_track', track);
+        findRoomAddTrack(roomName, track, (err, __) => {
+          if (err) {
+            console.log(err);
+            callback(err);
+          } else {
+            spotifyApi.addToQueue(song.uri)
+              .then(() => {
+                callback();
+              })
+              .catch((err) => {
+                console.log(err);
+              })
+          }
+        })
+      }
+    })
+  //   console.log(data.song);
+  //   const room_name = data.room_name;
+  //   const tokens = await knex('rooms')
+  //     .select('spotify_token', 'refresh_token')
+  //     .where({ room_name: room_name });
 
-    spotifyApi.setAccessToken(tokens[0].spotify_token);
-    console.log(data.room_name);
-    const track = {
-      name: data.song.name,
-      artist: data.song.artists[0].name,
-      thumbnail_url: data.song.album.images[2].url,
-      room_name: data.room_name,
-      added_by: data.session_id,
-      likes: 0,
-      created_at: Date.now(),
-      updated_at: Date.now(),
-    }
+  //   spotifyApi.setAccessToken(tokens[0].spotify_token);
+  //   console.log(data.room_name);
+  //   const track = {
+  //     name: data.song.name,
+  //     artist: data.song.artists[0].name,
+  //     thumbnail_url: data.song.album.images[2].url,
+  //     room_name: data.room_name,
+  //     added_by: data.session_id,
+  //     likes: 0,
+  //     created_at: Date.now(),
+  //     updated_at: Date.now(),
+  //   }
 
-    console.log("Right over here folks")
-    io.in(data.room_name).emit('add_song', track);
+  //   console.log("Right over here folks")
+    // io.in(data.room_name).emit('add_song', track);
 
-    await knex('tracks')
-      .insert(track)
-      .catch(ex => {
-        throw(ex);
-      });
+  //   await knex('tracks')
+  //     .insert(track)
+  //     .catch(ex => {
+  //       throw(ex);
+  //     });
     
-    await spotifyApi.addToQueue(data.song.uri)
-      .catch(ex => {
-        console.log(ex);
-      });
+  //   await spotifyApi.addToQueue(data.song.uri)
+  //     .catch(ex => {
+  //       console.log(ex);
+  //     });
   });
 
-  socket.on("search_song", async data => {
-    const tokens = await knex('rooms')
-      .select('spotify_token', 'refresh_token')
-      .where({ room_name: data.room_name });
-
-    spotifyApi.setAccessToken(tokens[0].spotify_token);
-
-    const res = await spotifyApi.searchTracks(data.search_term);
-    socket.emit("search_results", res.body.tracks.items);
-    console.log(tracks);
-  });
-
-  socket.on("logout", sessionId => {
-    let host = false;
-    let room = undefined;
-    knex('sessions')
-      .where({ session_id: sessionId })
-      .then(rows => {
-        if (rows[0].permissions == 'host') {
-          host = true;
-          room = rows[0].room_name;
+  socket.on("search_song", ({ searchTerm, roomName }) => {
+    console.log(searchTerm)
+    if (searchTerm) {
+      findRoom(roomName, (err, data) => {
+        if (err) {
+          console.log(err);
+        } else {
+          const spotifyToken = data.spotifyToken;
+          // const refreshToken = data.refreshToken;
+  
+          spotifyApi.setAccessToken(spotifyToken);
+          console.log(searchTerm);
+          spotifyApi.searchTracks(searchTerm)
+            .then((res) => {
+              socket.emit("search_results", res.body.tracks.items);
+            })
+            .catch((err) => {
+              console.log(err);
+            })
         }
-        console.log(`Host: ${host}; Room: ${room}`);
-        if (host) {
-          knex('rooms')
-            .where({ room_name: room })
-            .del()
-            .catch(ex => {});
-        }
-        knex('sessions')
-          .where({ session_id: sessionId })
-          .del()
-          .catch(ex => {});
       })
-      .catch(ex => {});
+    }
+  });
+
+  socket.on("logout", ({ sessionId }, callback) => {
+    deleteSession(sessionId, (err, data) => {
+      if (err) {
+        console.log(err);
+        callback(err);
+      } else {
+        const { roomName, isHost } = data;
+        if (isHost) {
+          deleteRoom(roomName, (err, __) => {
+            if (err) {
+              console.log(err);
+              callback(err);
+            } else {
+              callback();
+            }
+          })
+        }
+      }
+    })
   });
 
   //Whenever someone disconnects this piece of code executed
@@ -235,12 +241,13 @@ io.on('connection', (socket) => {
 });
 
 app.get('/spotify_login', (req, res) => {
-  const room_name = req.query.room_name;
-  console.log(`Spotify_login: ${room_name}`);
+  console.log(req);
+  const roomName = req.query.room_name;
+  console.log(`Spotify_login: ${roomName}`);
 
   res.redirect('https://accounts.spotify.com/authorize?' +
     querystring.stringify({
-      room_name:room_name,
+      room_name:roomName,
       response_type: 'code',
       client_id: process.env.SPOTIFY_CLIENT_ID,
       scope: 'user-modify-playback-state',
@@ -274,15 +281,21 @@ app.get('/callback', async (req, res) => {
     json: true
   }
   request.post(authOptions, async (_, __, body) => {
-    const spotify_token = body.access_token;
-    const refresh_token = body.refresh_token;
-    await knex('rooms')
-            .where({ host_id:sessionId })
-            .update({ 
-              spotify_token: spotify_token,
-              refresh_token: refresh_token,
-              updated_at: Date.now()
-            });
+    const spotifyToken = body.access_token;
+    const refreshToken = body.refresh_token;
+
+    Room.findOne({ hostId: sessionId }, (err, data) => {
+      if (err) {
+        console.log(err);
+      }
+      console.log(data);
+      const roomName = data.roomName;
+      findRoomUpdateTokens(roomName, spotifyToken, refreshToken, (err, __) => {
+        if (err) {
+          console.log(err);
+        }
+      })
+    })
     const uri = process.env.FRONTEND_URI || 'http://localhost:3000/queue';
     
     res.redirect(uri);
