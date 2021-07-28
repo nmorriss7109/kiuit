@@ -36,7 +36,7 @@ if (process.env.NODE_ENV === "production") {
 
   // Handle React routing, return all requests to React app
   app.get('*', (req, res) => {
-    res.sendFile(__dirname + 'client/build/index.html');
+    res.sendFile(__dirname + '/client/build/index.html');
     // res.sendFile('./client/build/index.html');
   });
 }
@@ -44,7 +44,6 @@ if (process.env.NODE_ENV === "production") {
 var spotifyApi = new SpotifyWebApi({
   clientId: process.env.SPOTIFY_CLIENT_ID,
   clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
-  redirectUri: 'http://www.example.com/callback'
 });
 
 mongoose.connect(process.env.DB_URL, { useNewUrlParser: true, useUnifiedTopology: true, useFindAndModify: false });
