@@ -241,12 +241,10 @@ io.on('connection', (socket) => {
 
 app.get('/spotify_login', (req, res) => {
   console.log(req);
-  const roomName = req.query.room_name;
-  console.log(`Spotify_login: ${roomName}`);
+  console.log('PRINT THIS OUT FOR GODS SAKE');
 
   res.redirect('https://accounts.spotify.com/authorize?' +
     querystring.stringify({
-      room_name:roomName,
       response_type: 'code',
       client_id: process.env.SPOTIFY_CLIENT_ID,
       scope: 'user-modify-playback-state',
