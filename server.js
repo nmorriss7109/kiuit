@@ -32,16 +32,6 @@ const findRoomAddTrack = kiuit.findRoomAddTrack;
 app.use(cors({origin: new URL('http://localhost:3000'), credentials: true})) // Add this 'new' keyword to URL
 
 
-if (process.env.NODE_ENV === "production") {
-  app.use(express.static("client/build"));
-
-  // Handle React routing, return all requests to React app
-  app.get('*', (req, res) => {
-    res.sendFile(__dirname + '/client/build/index.html');
-    // res.sendFile('./client/build/index.html');
-  });
-}
-
 var spotifyApi = new SpotifyWebApi({
   clientId: process.env.SPOTIFY_CLIENT_ID,
   clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
@@ -299,6 +289,16 @@ app.get('/callback', async (req, res) => {
     res.redirect(uri);
   });
 });
+
+// if (process.env.NODE_ENV === "production") {
+//   app.use(express.static("client/build"));
+
+//   // Handle React routing, return all requests to React app
+//   app.get('*', (req, res) => {
+//     res.sendFile(__dirname + '/client/build/index.html');
+//     // res.sendFile('./client/build/index.html');
+//   });
+// }
 
 let port = process.env.PORT || 5000;
 console.log(`Listening on port ${port}.`);
