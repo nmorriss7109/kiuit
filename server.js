@@ -31,8 +31,14 @@ const findRoomAddTrack = kiuit.findRoomAddTrack;
 
 app.use(cors())
 
-if (process.env.NODE_ENV ===  "production") {
-  server.use(express.static("client/build"));
+if (process.env.NODE_ENV === "production") {
+  app.use(express.static("public"));
+
+  // Handle React routing, return all requests to React app
+  // app.get('/', (req, res) => {
+  //   res.sendFile(__dirname + '/client/build/index.html');
+    // res.sendFile('./client/build/index.html');
+  // });
 }
 
 
@@ -234,7 +240,7 @@ io.on('connection', (socket) => {
   });
 });
 
-app.post('/spotify_login', (req, res) => {
+app.get('/spotify_login', (req, res) => {
   console.log(req);
   console.log('PRINT THIS OUT FOR GODS SAKE');
 
@@ -294,15 +300,7 @@ app.get('/callback', async (req, res) => {
   });
 });
 
-// if (process.env.NODE_ENV === "production") {
-//   app.use(express.static("client/build"));
 
-//   // Handle React routing, return all requests to React app
-//   app.get('*', (req, res) => {
-//     res.sendFile(__dirname + '/client/build/index.html');
-//     // res.sendFile('./client/build/index.html');
-//   });
-// }
 
 let port = process.env.PORT || 5000;
 console.log(`Listening on port ${port}.`);
