@@ -29,7 +29,11 @@ const deleteRoom = kiuit.deleteRoom;
 const findRoomUpdateTokens = kiuit.findRoomUpdateTokens;
 const findRoomAddTrack = kiuit.findRoomAddTrack;
 
-app.use(cors({origin: new URL('http://localhost:3000'), credentials: true})) // Add this 'new' keyword to URL
+app.use(cors())
+
+if (process.env.NODE_ENV ===  "production") {
+  server.use(express.static("client/build"));
+}
 
 
 var spotifyApi = new SpotifyWebApi({
