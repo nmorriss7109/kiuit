@@ -15,7 +15,7 @@ import getCookie from '../GetCookie';
 const Queue = props => {
   const { name, room, setName, setRoom } = useContext(MainContext);
   const socket = useContext(SocketContext);
-  const [songs, setSongs] = useState([]);
+  
   const [searchBoxVisible, setSearchBoxVisible] = useState(false);
   const [searchResults, setSearchResults] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -23,6 +23,14 @@ const Queue = props => {
   const { sessionId, setSessionId } = useContext(MainContext);
   const history = useHistory();
   const toast = useToast();
+  const [tracks, setTracks] = useState([]);
+
+  
+
+  // const tracks = [];
+  // const setTracks = tracks => {
+  //   tracks = tracks;
+  // }
 
   window.onpopstate = e => logout();
   //Checks to see if there's a user present
@@ -30,15 +38,42 @@ const Queue = props => {
 
 
   useEffect(() => {
-    socket.on("load_songs", songs => {
-      console.log(songs);
-      setSongs(songs);
+    let isMounted = true;
+  //   setTracks([
+  //     {
+  //       trackId: '72024ddf-fbec-4b49-bd9d-c52bde4ad207',
+  //       songName: 'Blueberry Faygo',
+  //       artist: 'Lil Mosey',
+  //       thumbnailUrl: 'https://i.scdn.co/image/ab67616d00004851ab3f9995f4f3a83e0591c940',
+  //       likes: 0,
+  //       addedBy: '6ec32d0c-4463-42b3-b278-260cb6ad79a0',
+  //       addedAt: 1627463657106
+  //     },
+  //     {
+  //       trackId: '501d5efd-61da-4c75-bb94-c3be3900af28',
+  //       songName: 'D.D.D',
+  //       artist: 'THE BOYZ',
+  //       thumbnailUrl: 'https://i.scdn.co/image/ab67616d000048514f1b960f687c83de37d4e152',
+  //       likes: 0,
+  //       addedBy: '6ec32d0c-4463-42b3-b278-260cb6ad79a0',
+  //       addedAt: 1627463983273
+  //     }
+  //  ])
+
+    socket.on("load_tracks", trackss => {
+      console.log(tracks);
+      if (isMounted) {
+        console.log("Tracks set")
+        setTracks(trackss);
+      }
+      console.log(trackss);
+      console.log(tracks);
     });
 
-    socket.on("add_song", song => {
-      console.log(song)
-      setSongs(songs => [...songs, song]);
-      console.log(songs);
+    socket.on("add_track", track => {
+      console.log(track)
+      if (isMounted) setTracks(tracks => [...tracks, track]);
+      console.log(tracks);
     });
 
     socket.on("notification", notif => {
@@ -59,30 +94,42 @@ const Queue = props => {
 
     setSessionId(getCookie('sessionId'));
 
+    return () => { isMounted = false };
+
   }, [socket, toast]);
 
   const triggerSearchBox = () => {
-    console.log("yo")
     setSearchBoxVisible(true);
   }
 
   const handleSearch = () => {
-    socket.emit("search_song", {search_term: searchTerm, room_name: room}, results => setSearchResults(results));
+    console.log(searchTerm);
+    socket.emit("search_song", {searchTerm: searchTerm, roomName: room}, results => setSearchResults(results));
   }
 
   const handleAddSong = (i) => {
-    socket.emit('add_song', {song: searchResults[i], room_name: room, session_id: sessionId});
-
-    setSearchBoxVisible(false);
+    socket.emit('add_track', {song: searchResults[i], roomName: room, sessionId: sessionId}, (err, __) => {
+      if (err) {
+        console.log(err);
+      } else {
+        setSearchBoxVisible(false);
+        return;
+      }
+    });
   };
 
   const logout = () => {
     setName('');
     setRoom('');
     document.cookie = "sessionId=; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
-    socket.emit('logout', sessionId);
-    history.push('/');
-    history.go(0);
+    socket.emit('logout', { sessionId }, (err, __) => {
+      if (err) {
+        console.log(err);
+      } else {
+        history.push('/');
+        history.go(0);
+      }
+    });
   };
 
   return (
@@ -111,14 +158,14 @@ const Queue = props => {
         </Flex>
       </Heading>
 
-      <ScrollToBottom className='songs' debug={false}>
-        {/* {messages.length > 0 ? */}
-        {songs.length > 0 ?
-          songs.map((song, i) =>
-          (<HStack key={i} className={'song'} spacing='auto' bg='white' padding='5px' marginBottom='10px' borderRadius='5px' width='100%'>
+      <ScrollToBottom className='tracks' debug={false}>
+        {console.log(tracks)}
+        {tracks.length >= 0 ?
+          tracks.map((track, i) =>
+          (<HStack key={i} className={'track'} spacing='auto' bg='white' padding='5px' marginBottom='10px' borderRadius='5px' width='100%'>
               <HStack spacing='10px'>
-                <Image width='50px' height='50px' src={song.thumbnail_url}/>
-                <Text fontSize='large' className='name' borderRadius='2px'>{song.name} by {song.artist}</Text>
+                <Image width='50px' height='50px' src={track.thumbnailUrl}/>
+                <Text fontSize='large' className='name' borderRadius='2px'>{track.trackName} by {track.artist}</Text>
               </HStack>
               <IconButton icon={<FiMenu/>} bg='white' />
             </HStack>)
@@ -127,7 +174,7 @@ const Queue = props => {
           <Flex alignItems='center' justifyContent='center' mt='.5rem' bg='#EAEAEA' opacity='.2' w='100%' paddingBottom='10px'>
             <Box mr='2'>-----</Box>
             <BiMusic fontSize='1rem' />
-            <Text ml='1' fontWeight='400'>No songs in queue</Text>
+            <Text ml='1' fontWeight='400'>No tracks in queue</Text>
             <Box ml='2'>-----</Box>
           </Flex>
         }
@@ -136,6 +183,7 @@ const Queue = props => {
           <Box className={'search-box'} spacing='auto' bg='white' padding='5px' borderRadius='5px' width='100%'>
             <Input variant='filled' mr={{ base: "0", md: "4" }} mb={{ base: "4", md: "0" }} type="text" value={searchTerm} onChange={e => {
                 setSearchTerm(e.target.value);
+                console.log(searchTerm);
                 handleSearch();
               }} />
             {searchResults.map((song, i) => (
