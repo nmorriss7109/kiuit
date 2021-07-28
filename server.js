@@ -29,7 +29,8 @@ const deleteRoom = kiuit.deleteRoom;
 const findRoomUpdateTokens = kiuit.findRoomUpdateTokens;
 const findRoomAddTrack = kiuit.findRoomAddTrack;
 
-app.use(cors());
+app.use(cors({origin: new URL('http://localhost:3000'), credentials: true})) // Add this 'new' keyword to URL
+
 
 if (process.env.NODE_ENV === "production") {
   app.use(express.static("client/build"));
@@ -239,7 +240,7 @@ io.on('connection', (socket) => {
   });
 });
 
-app.get('/spotify_login', (req, res) => {
+app.post('/spotify_login', (req, res) => {
   console.log(req);
   console.log('PRINT THIS OUT FOR GODS SAKE');
 
