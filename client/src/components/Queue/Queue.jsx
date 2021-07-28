@@ -165,7 +165,7 @@ const Queue = props => {
           (<HStack key={i} className={'track'} spacing='auto' bg='white' padding='5px' marginBottom='10px' borderRadius='5px' width='100%'>
               <HStack spacing='10px'>
                 <Image width='50px' height='50px' src={track.thumbnailUrl}/>
-                <Text fontSize='large' className='name' borderRadius='2px'>{track.trackName} by {track.artist}</Text>
+                <Text fontSize='large' className='name' borderRadius='2px'>{track.songName} by {track.artist}</Text>
               </HStack>
               <IconButton icon={<FiMenu/>} bg='white' />
             </HStack>)

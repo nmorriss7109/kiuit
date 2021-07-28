@@ -294,7 +294,7 @@ app.get('/callback', async (req, res) => {
         }
       })
     })
-    const uri = process.env.FRONTEND_URI || 'http://localhost:3000/queue';
+    const uri = process.env.FRONTEND_URI || 'http://localhost:3000/';
     
     res.redirect(uri);
   });
