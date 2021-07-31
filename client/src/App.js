@@ -21,7 +21,6 @@ function App() {
                   <Route exact path='/' component={Login} />
                   <Route exact path='/queue' component={Queue} />
                   <Route exact path='/spotify_login' component={SpotifyLogin} />
-                  <Route component={DefaultPage} />
                 </Switch>
               </Router>
             </Flex>
