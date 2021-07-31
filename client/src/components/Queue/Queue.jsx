@@ -3,7 +3,7 @@ import { useHistory } from 'react-router-dom'
 import { MainContext } from '../../mainContext'
 import { SocketContext } from '../../socketContext'
 import { Box, Flex, Heading, IconButton, Text, Menu, Button, MenuButton, MenuList, MenuItem, cookieStorageManager, HStack, Input, VStack } from "@chakra-ui/react"
-import { FiFilePlus, FiList, FiLogOut, FiMenu, FiPlus, FiX } from 'react-icons/fi'
+import { FiFilePlus, FiList, FiLogOut, FiMenu, FiPlus, FiRefreshCcw, FiX } from 'react-icons/fi'
 import { BiMessageDetail, BiMusic } from 'react-icons/bi'
 import { RiBoxingLine, RiSendPlaneFill } from 'react-icons/ri'
 import ScrollToBottom from 'react-scroll-to-bottom';
@@ -132,6 +132,14 @@ const Queue = props => {
     });
   };
 
+  const refreshToken = () => {
+    socket.emit('refresh_token', { sessionId }, (err, __) => {
+      if (err) {
+        console.log(err);
+      }
+    })
+  }
+
   return (
     <Flex className='room' flexDirection='column' width={{ base: "100%", sm: '400px' }} height={{ base: "100%", sm: "auto" }} >
       <Heading className='heading' as='h4' bg='white' p='1rem 1.5rem' borderRadius='10px 10px 0 0'>
@@ -149,6 +157,7 @@ const Queue = props => {
                 })
               }
             </MenuList>
+            <IconButton icon={<FiRefreshCcw />} bg='blue.300' color='white' isRound='true' onClick={refreshToken} />
           </Menu>
           <Flex alignItems='center' flexDirection='column' flex={{ base: "1", sm: "auto" }}>
             <Heading fontSize='lg'> {room.slice(0, 1).toUpperCase() + room.slice(1)}</Heading>

@@ -39,7 +39,7 @@ const Login = () => {
       // setName(name);
       // setRoom(room);
 
-      socket.emit('resume_session', { sessionId }, (err, { name, roomName}) => {
+      socket.emit('resume_session', { sessionId }, (err, { name, roomName }) => {
 
         // TODO: Fix this stuff
         if (err) {

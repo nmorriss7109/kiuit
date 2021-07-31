@@ -52,11 +52,60 @@ if (__prod__) {
   })
 }
 
+const redirect_uri = 
+  process.env.REDIRECT_URI || 
+  'http://localhost:5000/callback';
 
 var spotifyApi = new SpotifyWebApi({
   clientId: process.env.SPOTIFY_CLIENT_ID,
   clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
 });
+
+const refreshSpotifyToken = (sessionId, callback) => {
+  Room.findOne({ hostId: sessionId }, (err, data) => {
+    if (err) {
+      console.log(err);
+    } else {
+      console.log(data);
+      const refreshToken = data.refreshToken;
+      console.log(`Refresh token: ${refreshToken}`);
+      const authOptions = {
+        url: 'https://accounts.spotify.com/api/token',
+        form: {
+          // code: code,
+          // redirect_uri,
+          grant_type: 'refresh_token',
+          refresh_token: refreshToken
+        },
+        headers: {
+          'Authorization': 'Basic ' + (new Buffer(
+            process.env.SPOTIFY_CLIENT_ID + ':' + process.env.SPOTIFY_CLIENT_SECRET
+          ).toString('base64'))
+        },
+        json: true
+      }
+    
+      request.post(authOptions, async (a, b, body) => {
+        const newAccessToken = body.access_token;
+        const newRefreshToken = body.refresh_token;
+        console.log(a);
+        console.log(b);
+        console.log(body);
+  
+        const roomName = data.roomName;
+        findRoomUpdateTokens(roomName, newAccessToken, newRefreshToken, (err, __) => {
+          if (err) {
+            console.log(err);
+          }
+        });
+        // const uri = process.env.FRONTEND_URI || 'http://localhost:3000/';
+        
+        // res.redirect(uri);
+        callback();
+      });
+    }
+  });
+}
 
 mongoose.connect(process.env.DB_URL, { useNewUrlParser: true, useUnifiedTopology: true, useFindAndModify: false });
 
@@ -166,38 +215,6 @@ io.on('connection', (socket) => {
         })
       }
     })
-  //   console.log(data.song);
-  //   const room_name = data.room_name;
-  //   const tokens = await knex('rooms')
-  //     .select('spotify_token', 'refresh_token')
-  //     .where({ room_name: room_name });
-
-  //   spotifyApi.setAccessToken(tokens[0].spotify_token);
-  //   console.log(data.room_name);
-  //   const track = {
-  //     name: data.song.name,
-  //     artist: data.song.artists[0].name,
-  //     thumbnail_url: data.song.album.images[2].url,
-  //     room_name: data.room_name,
-  //     added_by: data.session_id,
-  //     likes: 0,
-  //     created_at: Date.now(),
-  //     updated_at: Date.now(),
-  //   }
-
-  //   console.log("Right over here folks")
-    // io.in(data.room_name).emit('add_song', track);
-
-  //   await knex('tracks')
-  //     .insert(track)
-  //     .catch(ex => {
-  //       throw(ex);
-  //     });
-    
-  //   await spotifyApi.addToQueue(data.song.uri)
-  //     .catch(ex => {
-  //       console.log(ex);
-  //     });
   });
 
   socket.on("search_song", ({ searchTerm, roomName }) => {
@@ -246,15 +263,21 @@ io.on('connection', (socket) => {
   });
 
   //Whenever someone disconnects this piece of code executed
-  socket.on('disconnect', _ => {
+  socket.on('disconnect', () => {
     console.log('A user disconnected');
+  });
+
+  socket.on('refresh_token', ({ sessionId }) => {
+    console.log('Refreshing spotify token');
+    refreshSpotifyToken(sessionId, (err) => {
+      if (err) {
+        console.log(err);
+      }
+    });
   });
 });
 
 app.get('/api/spotify_login', (req, res) => {
-  console.log(req);
-  console.log('PRINT THIS OUT FOR GODS SAKE');
-
   res.redirect('https://accounts.spotify.com/authorize?' +
     querystring.stringify({
       response_type: 'code',
@@ -263,10 +286,6 @@ app.get('/api/spotify_login', (req, res) => {
       redirect_uri,
     }));
 });
-
-const redirect_uri = 
-  process.env.REDIRECT_URI || 
-  'http://localhost:5000/callback';
 
 app.get('/callback', async (req, res) => {
   const sessionId = req.rawHeaders.find(elem => elem.startsWith('sessionId=')).split('=')[1]

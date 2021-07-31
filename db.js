@@ -136,8 +136,8 @@ const deleteRoom = (roomName, done) => {
 const findRoomUpdateTokens = (roomName, spotifyToken, refreshToken, done) => {
   Room.findOneAndUpdate(
     { roomName: roomName },
-    { spotifyToken: spotifyToken },
-    { refreshToken: refreshToken },
+    { spotifyToken: spotifyToken,
+      refreshToken: refreshToken },
     (err, data) => {
       if (err) done(err);
       return done(null, data)
