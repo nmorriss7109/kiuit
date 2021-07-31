@@ -35,14 +35,21 @@ if (__prod__) {
   app.use(express.static("client/build"));
 
   // Handle React routing, return all requests to React app
-  app.get('/*', (req, res) => {
+  app.get('/', (req, res) => {
     res.sendFile(__dirname + '/client/build/index.html', (err) => {
       if (err) {
         res.status(500).send(err);
       }
     });
-    // res.sendFile('./client/build/index.html');
   });
+
+  app.get('/queue', (req, res) => {
+    res.sendFile(__dirname + '/client/build/index.html', (err) => {
+      if (err) {
+        res.status(500).send(err);
+      }
+    });
+  })
 }
 
 
