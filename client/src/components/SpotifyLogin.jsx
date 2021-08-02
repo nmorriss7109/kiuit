@@ -1,6 +1,6 @@
 import { IconButton } from '@chakra-ui/react'
 import React from 'react'
-import { BiArrowBack } from 'react-icons/bi'
+import { BiArrowBack, BiLogIn } from 'react-icons/bi'
 import { Redirect, useHistory } from 'react-router-dom'
 
 const SpotifyLogin = () => {
@@ -12,8 +12,11 @@ const SpotifyLogin = () => {
   const spotify_login = (process.env.NODE_ENV === 'production' ? '/api/spotify_login' : 'http://localhost:5000/api/spotify_login');
   return (
     <div>
-      <IconButton mr={2} isRound='true' bg='green.300' color='white' icon={<BiArrowBack />} onClick={() => window.location = spotify_login} /> Login with Spotify;
-      <IconButton mr={2} isRound='true' bg='green.300' color='white' icon={<BiArrowBack />} onClick={redirect} /> Back Home;
+      <IconButton mr={2} isRound='true' bg='green.500' color='white' icon={<BiLogIn />} onClick={() => window.location = spotify_login} /> 
+      Login with Spotify
+      <br/><br/>
+      <IconButton mr={2} isRound='true' bg='green.500' color='white' icon={<BiArrowBack />} onClick={redirect} /> 
+      Back Home
     </div>
   );
 };

@@ -118,21 +118,20 @@ io.on('connection', (socket) => {
     console.log('start session');
     console.log({roomName, name, sessionId});
 
-    addSession(name, roomName, sessionId, isHost, (err, data) => {
-      if (err) console.log(err);
-      console.log(data);
-    })
-
     if (isHost) {
       addRoom(roomName, sessionId, (err, data) => {
         if (err) {
           console.log(err);
-          callback(err);
+          callback(`Room ${roomName} already exists :(`, null);
         } else {
           console.log(`Added room ${roomName}`);
           socket.join(roomName);
           socket.in(roomName).emit('notification', {title: 'Welcome!', description: `${name} just joined the party.`});
           // socket.in(roomName).emit('users', getUsers(roomName));
+          addSession(name, roomName, sessionId, isHost, (err, data) => {
+            if (err) console.log(err);
+            console.log(data);
+          })
           callback(null, data);
         }
       })
@@ -143,16 +142,20 @@ io.on('connection', (socket) => {
           console.log(err);
           callback(err);
         }
-        if (!data) {
-          callback("Error");
+        console.log(`Data: ${data}`);
+        if (data == null) {
+          callback(`Room ${roomName} not found :(`, null);
         } else {
           console.log("join");
           socket.join(roomName);
           socket.in(roomName).emit('notification', {title: 'Welcome!', description: `${name} just joined the party.`});
           const tracks = data.queue;
           io.in(roomName).emit('load_tracks', tracks);
-          
           // io.in(roomName).emit('users', getUsers(roomName));\
+          addSession(name, roomName, sessionId, isHost, (err, data) => {
+            if (err) console.log(err);
+            console.log(data);
+          })
           callback(null, data);
         }
       });
@@ -299,8 +302,6 @@ app.get('/api/spotify_login', (req, res) => {
 
 app.get('/callback', async (req, res) => {
   const sessionId = req.rawHeaders.find(elem => elem.startsWith('sessionId=')).split('=')[1]
-  // const rooms = await knex('rooms').where({ host_id: sessionId });
-  // const room_name = rooms[0].room_name;
 
   console.log(sessionId);
   const code = req.query.code || null

@@ -9,11 +9,6 @@ import { UsersContext } from '../../usersContext'
 import { v4 as uuidv4 } from 'uuid'
 import getCookie from '../GetCookie';
 
-// const getCookie = (name) => {
-//   const value = `; ${document.cookie}`;
-//   const parts = value.split(`; ${name}=`);
-//   if (parts.length === 2) return parts.pop().split(';').shift();
-// }
 
 const Login = () => {
   const socket = useContext(SocketContext)
@@ -34,20 +29,14 @@ const Login = () => {
       const sessionId = getCookie('sessionId');
       setSessionId(sessionId);
       
-      // setName(name);
-      // setRoom(room);
-
       socket.emit('resume_session', { sessionId }, (err, {name, room}) => {
-
-        // TODO: Fix this stuff
         if (err) {
-          console.log("right here");
           return toast({
             position: "top",
             title: "Error",
             description: err,
             status: "error",
-            duration: 5000,
+            duration: null,
             isClosable: true,
           });
         }
@@ -59,9 +48,9 @@ const Login = () => {
         return toast({
           position: "top",
           title: "Hey there",
-          description: `Welcome to ${room.roomName}`,
+          description: `Welcome back to ${room.roomName}`,
           status: "success",
-          duration: 5000,
+          duration: 2000,
           isClosable: true,
         });
       });
@@ -72,15 +61,19 @@ const Login = () => {
   const handleClick = () => {
     const sessionId = uuidv4();
     document.cookie = `sessionId=${sessionId}`;
-    console.log("Button clicked!");
 
     socket.emit('start_session', { name, roomName: room.roomName, sessionId, isHost }, (err, data) => {
-      console.log(data);
-      setRoom(data);
       if (err) {
-        console.log(err);
+        return toast({
+          position: "top",
+          title: "Error",
+          description: err,
+          status: "error",
+          duration: null,
+          isClosable: true,
+        });
       } else {
-        console.log("Here")
+        setRoom(data);
         if (isHost) {
           history.push('/spotify_login');
         } else {
@@ -88,7 +81,7 @@ const Login = () => {
           return toast({
             position: "top",
             title: "Hey there",
-            description: `Welcome to ${room}`,
+            description: `Welcome to ${room.roomName}`,
             status: "success",
             duration: 5000,
             isClosable: true,
@@ -104,7 +97,7 @@ const Login = () => {
       <Flex className="form" gap='1rem' flexDirection={{ base: "column", md: "row" }}>
         <Input variant='filled' mr={{ base: "0", md: "4" }} mb={{ base: "4", md: "0" }} type="text" placeholder='User Name' value={name} onChange={e => setName(e.target.value)} />
         <Input variant='filled' mr={{ base: "0", md: "4" }} mb={{ base: "4", md: "0" }} type="text" placeholder='Room Name' value={room.roomName} onChange={e => setRoom({roomName: e.target.value})} />
-        <Checkbox colorScheme='green' isChecked={isHost} onChange={(e) => setIsHost(e.target.checked)}>Hosting</Checkbox>
+        <Checkbox colorScheme='green' isChecked={isHost} onChange={(e) => setIsHost(e.target.checked)}>Hosting</Checkbox><br/>
         <IconButton colorScheme='green' isRound='true' icon={<RiArrowRightLine />} onClick={handleClick}></IconButton>
       </Flex>
     </Flex>
