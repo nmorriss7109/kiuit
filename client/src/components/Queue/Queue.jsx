@@ -12,7 +12,7 @@ import './Queue.scss'
 import { UsersContext } from '../../usersContext'
 import getCookie from '../GetCookie';
 
-const Queue = props => {
+const Queue = () => {
   const { name, room, setName, setRoom } = useContext(MainContext);
   const socket = useContext(SocketContext);
   
@@ -26,55 +26,24 @@ const Queue = props => {
   const [tracks, setTracks] = useState([]);
 
   
-
-  // const tracks = [];
-  // const setTracks = tracks => {
-  //   tracks = tracks;
-  // }
-
   window.onpopstate = e => logout();
   //Checks to see if there's a user present
   useEffect(() => { if (!name) return history.push('/') }, [history, name]);
 
+  // useEffect(() => {
+  //   setTracks(room.queue);
+  // }, []);
 
   useEffect(() => {
     let isMounted = true;
-  //   setTracks([
-  //     {
-  //       trackId: '72024ddf-fbec-4b49-bd9d-c52bde4ad207',
-  //       songName: 'Blueberry Faygo',
-  //       artist: 'Lil Mosey',
-  //       thumbnailUrl: 'https://i.scdn.co/image/ab67616d00004851ab3f9995f4f3a83e0591c940',
-  //       likes: 0,
-  //       addedBy: '6ec32d0c-4463-42b3-b278-260cb6ad79a0',
-  //       addedAt: 1627463657106
-  //     },
-  //     {
-  //       trackId: '501d5efd-61da-4c75-bb94-c3be3900af28',
-  //       songName: 'D.D.D',
-  //       artist: 'THE BOYZ',
-  //       thumbnailUrl: 'https://i.scdn.co/image/ab67616d000048514f1b960f687c83de37d4e152',
-  //       likes: 0,
-  //       addedBy: '6ec32d0c-4463-42b3-b278-260cb6ad79a0',
-  //       addedAt: 1627463983273
-  //     }
-  //  ])
-
-    socket.on("load_tracks", trackss => {
-      console.log(tracks);
-      if (isMounted) {
-        console.log("Tracks set")
-        setTracks(trackss);
-      }
-      console.log(trackss);
-      console.log(tracks);
-    });
 
     socket.on("add_track", track => {
       console.log(track)
       if (isMounted) setTracks(tracks => [...tracks, track]);
       console.log(tracks);
     });
+
+    setTracks(room.queue);
 
     socket.on("notification", notif => {
       toast({
@@ -104,11 +73,11 @@ const Queue = props => {
 
   const handleSearch = () => {
     console.log(searchTerm);
-    socket.emit("search_song", {searchTerm: searchTerm, roomName: room}, results => setSearchResults(results));
+    socket.emit("search_song", {searchTerm: searchTerm, roomName: room.roomName}, results => setSearchResults(results));
   }
 
   const handleAddSong = (i) => {
-    socket.emit('add_track', {song: searchResults[i], roomName: room, sessionId: sessionId}, (err, __) => {
+    socket.emit('add_track', {song: searchResults[i], roomName: room.roomName, sessionId: sessionId}, (err, __) => {
       if (err) {
         console.log(err);
       } else {
@@ -119,13 +88,13 @@ const Queue = props => {
   };
 
   const logout = () => {
-    setName('');
-    setRoom('');
     document.cookie = "sessionId=; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
     socket.emit('logout', { sessionId }, (err, __) => {
       if (err) {
         console.log(err);
       } else {
+        setName('');
+        setRoom({});
         history.push('/');
         history.go(0);
       }
@@ -160,7 +129,7 @@ const Queue = props => {
             <IconButton icon={<FiRefreshCcw />} bg='blue.300' color='white' isRound='true' onClick={refreshToken} />
           </Menu>
           <Flex alignItems='center' flexDirection='column' flex={{ base: "1", sm: "auto" }}>
-            <Heading fontSize='lg'> {room.slice(0, 1).toUpperCase() + room.slice(1)}</Heading>
+            <Heading fontSize='lg'> {room.roomName.slice(0, 1).toUpperCase() + room.roomName.slice(1)}</Heading>
             <Flex alignItems='center'><Text mr='1' fontWeight='400' fontSize='md' opacity='.7' letterSpacing='0' >{name}</Text><Box h={2} w={2} borderRadius='100px' bg='green.300'></Box></Flex>
           </Flex>
           <IconButton icon={<FiLogOut />} bg='red.300' color='white' isRound='true' onClick={logout} />

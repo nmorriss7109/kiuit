@@ -56,45 +56,11 @@ var roomSchema = new Schema({
 var Room = mongoose.model("Room", roomSchema);
 
 
-// Create Track schema
-// var trackSchema = new Schema({
-//   trackId: {
-//     type: Integer,
-//     required: true
-//   },
-//   name: {
-//     type: String,
-//     required: true
-//   },
-//   artist: {
-//     type: String,
-//     required: true
-//   },
-//   thumbnailUrl: {
-//     type: String,
-//   },
-//   likes: {
-//     type: Integer,
-//     default: 0
-//   },
-//   roomName: {
-//     type: String,
-//     required: true
-//   },
-//   addedBy: {
-//     type: String,
-//     required: true
-//   }
-// }, { timestamps: true });
-
-// var Track = mongoose.model("Track", trackSchema);
-
-
-const addSession = (name, roomName, sessionId, done) => {
-  const session = new Session({ sessionId: sessionId, name: name, roomName: roomName });
-  session.save((err, data) => {
+const addSession = (name, roomName, sessionId, isHost, done) => {
+  const session = new Session({ sessionId: sessionId, name: name, roomName: roomName, isHost: isHost });
+  session.save((err, __) => {
     if (err) return done(err);
-    return done(null, data);
+    return done(null, session);
   });
 };
 
@@ -108,15 +74,15 @@ const findSession = (sessionId, done) => {
 const deleteSession = (sessionId, done) => {
   Session.findOneAndDelete({ sessionId: sessionId }, (err, data) => {
     if (err) return done(err);
-    return done(data);
+    return done(null, data);
   })
 }
 
 const addRoom = (roomName, hostId, done) => {
   const room = new Room({ roomName: roomName, hostId: hostId });
-  room.save((err, data) => {
+  room.save((err, __) => {
     if (err) return done(err);
-    return done(null, data);
+    return done(null, room);
   })
 };
 
@@ -160,6 +126,7 @@ const findRoomAddTrack = (roomName, { trackId, songUri, songName, artist, thumbn
     { $push: {queue: track} },
     (err, data) => {
       if (err) return done(err);
+      console.log(`Data ${data}`)
       return done(null, data);
     })
 };

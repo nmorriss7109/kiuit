@@ -118,12 +118,13 @@ io.on('connection', (socket) => {
     console.log('start session');
     console.log({roomName, name, sessionId});
 
-    addSession(name, roomName, sessionId, (err, __) => {
+    addSession(name, roomName, sessionId, isHost, (err, data) => {
       if (err) console.log(err);
+      console.log(data);
     })
 
     if (isHost) {
-      addRoom(roomName, sessionId, (err, __) => {
+      addRoom(roomName, sessionId, (err, data) => {
         if (err) {
           console.log(err);
           callback(err);
@@ -132,7 +133,7 @@ io.on('connection', (socket) => {
           socket.join(roomName);
           socket.in(roomName).emit('notification', {title: 'Welcome!', description: `${name} just joined the party.`});
           // socket.in(roomName).emit('users', getUsers(roomName));
-          callback();
+          callback(null, data);
         }
       })
     } else {
@@ -148,9 +149,11 @@ io.on('connection', (socket) => {
           console.log("join");
           socket.join(roomName);
           socket.in(roomName).emit('notification', {title: 'Welcome!', description: `${name} just joined the party.`});
-          io.in(roomName).emit('load_tracks', data.queue);
-          callback();
-          // io.in(roomName).emit('users', getUsers(roomName));
+          const tracks = data.queue;
+          io.in(roomName).emit('load_tracks', tracks);
+          
+          // io.in(roomName).emit('users', getUsers(roomName));\
+          callback(null, data);
         }
       });
     }
@@ -160,20 +163,23 @@ io.on('connection', (socket) => {
     console.log("resume session");
     findSession(sessionId, (err, data) => {
       //do something with data
-      if (err || !data) {
+      if (err) {
         console.log(err);
         callback(err);
+      }
+      if (data == null) {
+        console.log(`Could not find session with id: ${sessionId}`);
       } else {
-        console.log(data);
+        console.log(`Session data: ${data}`);
         const { name, roomName } = data;
         socket.join(roomName);
         findRoom(roomName, (err, data) => {
           if (err) {
             console.log(err);
           } else {
-            console.log(data.queue);
-            io.in(roomName).emit("load_tracks", data.queue);
-            callback(undefined, { name, roomName });
+            console.log(data);
+            //io.in(roomName).emit("load_tracks", data.queue);
+            callback(undefined, {name: name, room: data});
           }
         })        
       }
@@ -198,18 +204,22 @@ io.on('connection', (socket) => {
           addedBy: sessionId,
         }
         console.log(track);
-        io.in(roomName).emit('add_track', track);
-        findRoomAddTrack(roomName, track, (err, __) => {
+        findRoomAddTrack(roomName, track, (err, data) => {
           if (err) {
             console.log(err);
             callback(err);
           } else {
             spotifyApi.addToQueue(song.uri)
               .then(() => {
-                callback();
+                // let queue = data.queue
+                // queue.push(track);
+                // callback(null, queue);
+                io.in(roomName).emit('add_track', track);
+                callback()
               })
               .catch((err) => {
                 console.log(err);
+                callback(err);
               })
           }
         })
@@ -225,7 +235,6 @@ io.on('connection', (socket) => {
           console.log(err);
         } else {
           const spotifyToken = data.spotifyToken;
-          // const refreshToken = data.refreshToken;
   
           spotifyApi.setAccessToken(spotifyToken);
           console.log(searchTerm);
@@ -256,8 +265,9 @@ io.on('connection', (socket) => {
             } else {
               callback();
             }
-          })
+          });
         }
+        callback();
       }
     })
   });

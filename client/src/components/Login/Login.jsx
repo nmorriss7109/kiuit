@@ -33,13 +33,11 @@ const Login = () => {
     if (getCookie('sessionId') != undefined) {
       const sessionId = getCookie('sessionId');
       setSessionId(sessionId);
-      // const name = getCookie('name');
-      // const room = getCookie('room');
       
       // setName(name);
       // setRoom(room);
 
-      socket.emit('resume_session', { sessionId }, (err, { name, roomName }) => {
+      socket.emit('resume_session', { sessionId }, (err, {name, room}) => {
 
         // TODO: Fix this stuff
         if (err) {
@@ -53,14 +51,15 @@ const Login = () => {
             isClosable: true,
           });
         }
+        console.log(room)
         
         setName(name);
-        setRoom(roomName);
+        setRoom(room);
         history.push('/queue');
         return toast({
           position: "top",
           title: "Hey there",
-          description: `Welcome to ${roomName}`,
+          description: `Welcome to ${room.roomName}`,
           status: "success",
           duration: 5000,
           isClosable: true,
@@ -75,9 +74,9 @@ const Login = () => {
     document.cookie = `sessionId=${sessionId}`;
     console.log("Button clicked!");
 
-    socket.emit('start_session', { name, roomName: room, sessionId, isHost }, (err, data) => {
-      console.log(err);
+    socket.emit('start_session', { name, roomName: room.roomName, sessionId, isHost }, (err, data) => {
       console.log(data);
+      setRoom(data);
       if (err) {
         console.log(err);
       } else {
@@ -104,7 +103,7 @@ const Login = () => {
       <Heading as="h1" size="4xl" textAlign='center' mb='8' fontFamily='DM Sans' fontWeight='600' letterSpacing='-2px'>Kiuit</Heading>
       <Flex className="form" gap='1rem' flexDirection={{ base: "column", md: "row" }}>
         <Input variant='filled' mr={{ base: "0", md: "4" }} mb={{ base: "4", md: "0" }} type="text" placeholder='User Name' value={name} onChange={e => setName(e.target.value)} />
-        <Input variant='filled' mr={{ base: "0", md: "4" }} mb={{ base: "4", md: "0" }} type="text" placeholder='Room Name' value={room} onChange={e => setRoom(e.target.value)} />
+        <Input variant='filled' mr={{ base: "0", md: "4" }} mb={{ base: "4", md: "0" }} type="text" placeholder='Room Name' value={room.roomName} onChange={e => setRoom({roomName: e.target.value})} />
         <Checkbox colorScheme='green' isChecked={isHost} onChange={(e) => setIsHost(e.target.checked)}>Hosting</Checkbox>
         <IconButton colorScheme='green' isRound='true' icon={<RiArrowRightLine />} onClick={handleClick}></IconButton>
       </Flex>
